@@ -29,12 +29,13 @@ ChartJS.register(
 const baseModels = [
   { id: 'swiss-ai/Apertus-8B-Instruct-2509', name: 'Apertus', variants: ['1.0-8B'] },
   { id: 'utter-project/EuroLLM-22B-Instruct-2512', name: 'EuroLLM', variants: ['1.0-22B'] },
-  { id: 'allenai/Olmo-3.1-32B-Instruct-SFT', name: 'Olmo', variants: ['3.1-32B'] },
-  { id: 'Qwen/Qwen3.5-397B-A17B-GPTQ-Int4', name: 'Qwen', variants: ['Qwen3.5-397B'] },
-  { id: 'mistralai/Ministral-3-3B-Instruct-2512-BF16', name: 'Ministral', variants: ['3-3B'] },
   { id: 'aisingapore/Gemma-SEA-LION-v4-27B-IT', name: 'SEA-LION', variants: ['Gemma-v4-27BB'] },
   { id: 'zai-org/GLM-4.6V-Flash', name: 'GLM', variants: ['4.6V-Flash'] },
   { id: 'moonshotai/Kimi-K2-Instruct-0905', name: 'Kimi K2', variants: ['Instruct-0905'] },
+  { id: 'mistralai/Ministral-3-3B-Instruct-2512-BF16', name: 'Ministral', variants: ['3-3B'] },
+  { id: 'nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16', name: 'Nemotron 3', variants: ['Super-120B'] },
+  { id: 'allenai/Olmo-3.1-32B-Instruct-SFT', name: 'Olmo', variants: ['3.1-32B'] },
+  { id: 'Qwen/Qwen3.5-397B-A17B-GPTQ-Int4', name: 'Qwen', variants: ['Qwen3.5-397B'] },
 ]
 
 // Color palette for models
@@ -79,7 +80,7 @@ const generateMockData = () => {
           name: v,
           downloads: variantData,
           totalDownloads: variantData.reduce((sum, item) => sum + item.count, 0),
-          parameters: `${Math.floor(Math.random() * 200 + 7)}B`,
+          likes: Math.floor(Math.random() * 1000),
           releaseDate: '2024-01-15',
           color: COLORS[idx % COLORS.length]
         }
@@ -87,6 +88,66 @@ const generateMockData = () => {
       color: COLORS[idx % COLORS.length]
     }
   })
+
+  return { models: modelsData, dates }
+}
+
+let hasconnected = false
+
+// Fetch real data from Hugging Face API
+const fetchRealData = async () => {
+  const tokenConfigured = isTokenConfigured()
+  if (!tokenConfigured) {
+    console.warn('Hugging Face token not configured. Using mock data.')
+    return false
+  } else if (hasconnected) {
+    console.debug('Not reconnecting')
+    return false
+  } else {
+    console.info('Connecting to Hugging Face API')
+    hasconnected = true
+  }
+
+  const days = 30
+  const today = new Date()
+  const dates = Array.from({ length: days }, (_, i) => {
+    const d = new Date(today)
+    d.setDate(d.getDate() - (days - 1 - i))
+    return d.toISOString().split('T')[0]
+  })
+
+  const modelsData = []
+
+  for (const model of baseModels) {
+    try {
+      const info = await fetchModelInfo(model.id)
+      if (info) {
+        const baseDownloads = info.downloads || 0
+        const dailyDownloads = Math.floor(baseDownloads / 30)
+
+        modelsData.push({
+          id: model.id,
+          name: model.name,
+          variants: model.variants.map(v => ({
+            name: v,
+            downloads: dates.map((date, i) => ({
+              date,
+              count: Math.floor(dailyDownloads * (0.8 + Math.random() * 0.4))
+            })),
+            totalDownloads: baseDownloads,
+            likes: info.likes,
+            releaseDate: 
+              info.updatedAt ? new Date(info.updatedAt).toISOString().split('T')[0] :
+              info.createdAt ? new Date(info.createdAt).toISOString().split('T')[0] : '?',
+            color: COLORS[modelsData.length % COLORS.length]
+          })),
+          color: COLORS[modelsData.length % COLORS.length]
+        })
+      }
+    } catch (error) {
+      console.error(`Error fetching ${model.id}:`, error)
+    }
+  }
 
   return { models: modelsData, dates }
 }
@@ -100,86 +161,28 @@ function App() {
   const [sortOrder, setSortOrder] = useState('desc')
   const [useRealData, setUseRealData] = useState(false)
 
-  // Fetch real data from Hugging Face API
-  const fetchRealData = async () => {
-    const tokenConfigured = isTokenConfigured()
-    if (!tokenConfigured) {
-      console.warn('Hugging Face token not configured. Using mock data.')
-      return false
-    }
-
-    const days = 30
-    const today = new Date()
-    const dates = Array.from({ length: days }, (_, i) => {
-      const d = new Date(today)
-      d.setDate(d.getDate() - (days - 1 - i))
-      return d.toISOString().split('T')[0]
-    })
-
-    const modelsData = []
-
-    for (const model of baseModels) {
-      try {
-        const info = await fetchModelInfo(model.id)
-
-        if (info) {
-          const baseDownloads = info.downloads || 0
-          const dailyDownloads = Math.floor(baseDownloads / 30)
-
-          modelsData.push({
-            id: model.id,
-            name: model.name,
-            variants: model.variants.map(v => ({
-              name: v,
-              downloads: dates.map((date, i) => ({
-                date,
-                count: Math.floor(dailyDownloads * (0.8 + Math.random() * 0.4))
-              })),
-              totalDownloads: baseDownloads,
-              parameters: info.modelId?.includes('7B') ? '7B' :
-                info.modelId?.includes('8B') ? '8B' :
-                  info.modelId?.includes('22B') ? '22B' : 'Unknown',
-              releaseDate: info.createdAt ? new Date(info.createdAt).toISOString().split('T')[0] : '2024-01-01',
-              color: COLORS[modelsData.length % COLORS.length]
-            })),
-            color: COLORS[modelsData.length % COLORS.length]
-          })
-        }
-      } catch (error) {
-        console.error(`Error fetching ${model.id}:`, error)
-      }
-    }
-
-    if (modelsData.length > 0) {
-      setData({ models: modelsData, dates })
-
-      const initialSelection = {}
-      modelsData.forEach(m => {
-        initialSelection[m.id] = true
-      })
-      setSelectedModels(initialSelection)
-      return true
-    }
-
-    return false
-  }
-
   useEffect(() => {
     // Try to use real data if token is configured
     const loadData = async () => {
       const tokenConfigured = isTokenConfigured()
 
       if (tokenConfigured) {
-        const success = await fetchRealData()
-        if (success) {
-          setUseRealData(true)
-          setLoading(false)
-          return
-        }
-      }
+        await fetchRealData().then((md) => {
+          if (!md) return
+          if (md.models.length > 0) {
+            setData({ models: md.models, dates: md.dates })
 
-      // Fall back to mock data
-      setTimeout(() => {
+            const initialSelection = {}
+            md.models.forEach(m => {
+              initialSelection[m.id] = true
+            })
+            setSelectedModels(initialSelection)
+            setUseRealData(true)
+            setLoading(false)
+          }
+        })
+      } else {
+        // Fall back to mock data
         const mockData = generateMockData()
         setData(mockData)
 
@@ -189,7 +192,7 @@ function App() {
         })
         setSelectedModels(initialSelection)
         setLoading(false)
-      }, 1000)
+      }
     }
 
     loadData()
@@ -273,7 +276,7 @@ function App() {
       m.variants.map(v => ({
         model: m.name,
         variant: v.name,
-        parameters: v.parameters,
+        likes: v.likes,
         releaseDate: v.releaseDate,
         totalDownloads: v.totalDownloads,
         color: v.color
@@ -283,7 +286,7 @@ function App() {
       const multiplier = sortOrder === 'desc' ? -1 : 1
       if (sortBy === 'downloads') return (a.totalDownloads - b.totalDownloads) * multiplier
       if (sortBy === 'name') return a.model.localeCompare(b.model) * multiplier
-      if (sortBy === 'parameters') return (parseInt(a.parameters) - parseInt(b.parameters)) * multiplier
+      if (sortBy === 'likes') return (parseInt(a.likes) - parseInt(b.likes)) * multiplier
       return 0
     }) || []
 
@@ -382,7 +385,7 @@ function App() {
                   >
                     <option value="downloads">Downloads</option>
                     <option value="name">Name</option>
-                    <option value="parameters">Parameters</option>
+                    <option value="likes">Likes</option>
                   </select>
                   <button
                     onClick={() => setSortOrder(prev => prev === 'desc' ? 'asc' : 'desc')}
@@ -399,9 +402,9 @@ function App() {
                     <tr className="border-b border-gray-700">
                       <th className="text-left py-3 px-4 text-gray-400 font-medium">Model</th>
                       <th className="text-left py-3 px-4 text-gray-400 font-medium">Variant</th>
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium">Parameters</th>
-                      <th className="text-left py-3 px-4 text-gray-400 font-medium">Release Date</th>
-                      <th className="text-right py-3 px-4 text-gray-400 font-medium">Total Downloads</th>
+                      <th className="text-left py-3 px-4 text-gray-400 font-medium">Likes</th>
+                      <th className="text-left py-3 px-4 text-gray-400 font-medium">Updated</th>
+                      <th className="text-right py-3 px-4 text-gray-400 font-medium">Downloads</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -420,7 +423,7 @@ function App() {
                           </div>
                         </td>
                         <td className="py-3 px-4 text-gray-300">{row.variant}</td>
-                        <td className="py-3 px-4 text-gray-300">{row.parameters}</td>
+                        <td className="py-3 px-4 text-gray-300">{row.likes}</td>
                         <td className="py-3 px-4 text-gray-300">{row.releaseDate}</td>
                         <td className="py-3 px-4 text-right font-medium">{row.totalDownloads.toLocaleString()}</td>
                       </tr>

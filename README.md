@@ -1,12 +1,21 @@
 # Hugging Face Tracker
 
-Interactive LLM Model Download Dashboard
+_A fast loading, open source, data-rich dashboard where every interaction surfaces insights effortlessly._
 
-A fast loading, open source, data-rich dashboard that feels like a blend of GitHub’s clarity and Hugging Face’s vibrancy—where every interaction surfaces insights effortlessly.
+To configure, set the `VITE_HF_TOKEN` to a token that you generated on the [Hugging Face Access Tokens](https://huggingface.co/settings/tokens) page. It only needs FINEGRAINED access to read public repo info.
 
-Create a **clean, elegant, and interactive** web dashboard that visualizes the **30-day public download counts** of leading open-source LLM models (and their top 5 variants) from Hugging Face. The dashboard should prioritize **clarity, responsiveness, and user engagement**, with a focus on **line graphs** for trend analysis and **interactive filters** for customization.
+Then install and run using:
+
+```
+npm install
+npm run dev
+```
 
 ---
+
+Created using [OpenHands](https://openhands.dev) with the [GLM-5](https://glm5.net) model, using this prompt:
+
+Create a **clean, elegant, and interactive** web dashboard that visualizes the **30-day public download counts** of leading open-source LLM models (and their top 5 variants) from Hugging Face. The dashboard should prioritize **clarity, responsiveness, and user engagement**, with a focus on **line graphs** for trend analysis and **interactive filters** for customization.
 
 ### **Technical Requirements**
 

@@ -30,7 +30,7 @@ const baseModels = [
   { id: 'swiss-ai/Apertus-8B-Instruct-2509', name: 'Apertus', variants: ['1.0-8B'] },
   { id: 'utter-project/EuroLLM-22B-Instruct-2512', name: 'EuroLLM', variants: ['1.0-22B'] },
   { id: 'allenai/Olmo-3.1-32B-Instruct-SFT', name: 'Olmo', variants: ['3.1-32B'] },
-  { id: 'Qwen/Qwen3.5-35B-A3B', name: 'Qwen', variants: ['Qwen3.5-35B'] },
+  { id: 'Qwen/Qwen3.5-397B-A17B-GPTQ-Int4', name: 'Qwen', variants: ['Qwen3.5-397B'] },
   { id: 'mistralai/Ministral-3-3B-Instruct-2512-BF16', name: 'Ministral', variants: ['3-3B'] },
   { id: 'aisingapore/Gemma-SEA-LION-v4-27B-IT', name: 'SEA-LION', variants: ['Gemma-v4-27BB'] },
   { id: 'zai-org/GLM-4.6V-Flash', name: 'GLM', variants: ['4.6V-Flash'] },
@@ -117,15 +117,15 @@ function App() {
     })
 
     const modelsData = []
-    
+
     for (const model of baseModels) {
       try {
         const info = await fetchModelInfo(model.id)
-        
+
         if (info) {
           const baseDownloads = info.downloads || 0
           const dailyDownloads = Math.floor(baseDownloads / 30)
-          
+
           modelsData.push({
             id: model.id,
             name: model.name,
@@ -136,9 +136,9 @@ function App() {
                 count: Math.floor(dailyDownloads * (0.8 + Math.random() * 0.4))
               })),
               totalDownloads: baseDownloads,
-              parameters: info.modelId?.includes('7B') ? '7B' : 
-                          info.modelId?.includes('8B') ? '8B' : 
-                          info.modelId?.includes('22B') ? '22B' : 'Unknown',
+              parameters: info.modelId?.includes('7B') ? '7B' :
+                info.modelId?.includes('8B') ? '8B' :
+                  info.modelId?.includes('22B') ? '22B' : 'Unknown',
               releaseDate: info.createdAt ? new Date(info.createdAt).toISOString().split('T')[0] : '2024-01-01',
               color: COLORS[modelsData.length % COLORS.length]
             })),
@@ -152,7 +152,7 @@ function App() {
 
     if (modelsData.length > 0) {
       setData({ models: modelsData, dates })
-      
+
       const initialSelection = {}
       modelsData.forEach(m => {
         initialSelection[m.id] = true
@@ -160,7 +160,7 @@ function App() {
       setSelectedModels(initialSelection)
       return true
     }
-    
+
     return false
   }
 
@@ -168,7 +168,7 @@ function App() {
     // Try to use real data if token is configured
     const loadData = async () => {
       const tokenConfigured = isTokenConfigured()
-      
+
       if (tokenConfigured) {
         const success = await fetchRealData()
         if (success) {
@@ -177,12 +177,12 @@ function App() {
           return
         }
       }
-      
+
       // Fall back to mock data
       setTimeout(() => {
         const mockData = generateMockData()
         setData(mockData)
-        
+
         const initialSelection = {}
         mockData.models.forEach(m => {
           initialSelection[m.id] = true
@@ -191,7 +191,7 @@ function App() {
         setLoading(false)
       }, 1000)
     }
-    
+
     loadData()
   }, [])
 
@@ -206,7 +206,7 @@ function App() {
     labels: data?.dates || [],
     datasets: data?.models
       .filter(m => selectedModels[m.id])
-      .flatMap(m => 
+      .flatMap(m =>
         m.variants.map(v => ({
           label: `${m.name} - ${v.name}`,
           data: v.downloads.slice(-timeRange).map(d => d.count),
@@ -246,7 +246,7 @@ function App() {
         borderWidth: 1,
         padding: 12,
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             return `${context.dataset.label}: ${context.parsed.y.toLocaleString()} downloads`
           }
         }
@@ -259,7 +259,7 @@ function App() {
       },
       y: {
         grid: { color: '#374151' },
-        ticks: { 
+        ticks: {
           color: '#9CA3AF',
           callback: (value) => value.toLocaleString()
         }
@@ -269,7 +269,7 @@ function App() {
 
   // Get flattened table data
   const tableData = data?.models
-    .flatMap(m => 
+    .flatMap(m =>
       m.variants.map(v => ({
         model: m.name,
         variant: v.name,
@@ -316,8 +316,8 @@ function App() {
             </div>
             <div className="flex items-center gap-2">
               <label className="text-gray-400 text-sm">Time Range:</label>
-              <select 
-                value={timeRange} 
+              <select
+                value={timeRange}
                 onChange={(e) => setTimeRange(Number(e.target.value))}
                 className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
               >
@@ -338,8 +338,8 @@ function App() {
               <h2 className="text-lg font-semibold mb-4">Models</h2>
               <div className="space-y-2">
                 {data?.models.map(m => (
-                  <label 
-                    key={m.id} 
+                  <label
+                    key={m.id}
                     className="flex items-center gap-3 p-2 rounded hover:bg-gray-700 cursor-pointer transition-colors"
                   >
                     <input
@@ -348,7 +348,7 @@ function App() {
                       onChange={() => toggleModel(m.id)}
                       className="w-4 h-4 rounded border-gray-600 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-800"
                     />
-                    <span 
+                    <span
                       className="w-3 h-3 rounded-full"
                       style={{ backgroundColor: m.color }}
                     ></span>
@@ -406,13 +406,13 @@ function App() {
                   </thead>
                   <tbody>
                     {tableData.map((row, idx) => (
-                      <tr 
-                        key={idx} 
+                      <tr
+                        key={idx}
                         className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors"
                       >
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <span 
+                            <span
                               className="w-2 h-2 rounded-full"
                               style={{ backgroundColor: row.color }}
                             ></span>

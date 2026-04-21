@@ -28,15 +28,17 @@ ChartJS.register(
 // List of models that are visualized
 // TODO: this belongs in a config file
 const baseModels = [
-  { id: 'swiss-ai/Apertus-8B-Instruct-2509', name: 'Apertus', variants: ['1.0-8B'] },
+  { id: 'swiss-ai/Apertus-70B-Instruct-2509', name: 'Apertus', variants: ['1.0-70B'] },
   { id: 'utter-project/EuroLLM-22B-Instruct-2512', name: 'EuroLLM', variants: ['1.0-22B'] },
-  { id: 'aisingapore/Gemma-SEA-LION-v4-27B-IT', name: 'SEA-LION', variants: ['Gemma-v4-27BB'] },
+  { id: 'allenai/Olmo-3.1-32B-Instruct-SFT', name: 'Olmo', variants: ['3.1-32B'] },
+  { id: 'aisingapore/Apertus-SEA-LION-v4-8B-IT', name: 'SEA-LION', variants: ['Apertus-v4-8B'] },
+  /*
   { id: 'zai-org/GLM-4.6V-Flash', name: 'GLM', variants: ['4.6V-Flash'] },
   { id: 'moonshotai/Kimi-K2-Instruct-0905', name: 'Kimi K2', variants: ['Instruct-0905'] },
   { id: 'mistralai/Ministral-3-3B-Instruct-2512-BF16', name: 'Ministral', variants: ['3-3B'] },
   { id: 'nvidia/NVIDIA-Nemotron-3-Super-120B-A12B-BF16', name: 'Nemotron 3', variants: ['Super-120B'] },
-  { id: 'allenai/Olmo-3.1-32B-Instruct-SFT', name: 'Olmo', variants: ['3.1-32B'] },
   { id: 'Qwen/Qwen3.5-397B-A17B-GPTQ-Int4', name: 'Qwen', variants: ['Qwen3.5-397B'] },
+  */
 ]
 
 // Color palette for models
@@ -341,8 +343,8 @@ function App() {
       <header className="bg-gray-800 border-b border-gray-700 px-6 py-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-white">Hugging Face Tracker</h1>
-            <p className="text-gray-400 text-sm">Interactive LLM Model Download Dashboard</p>
+            <h1 className="text-2xl font-bold text-white">Apertus Community Tracker</h1>
+            <p className="text-gray-400 text-sm">Interactive dashboard of open source LLM projects</p>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
@@ -370,7 +372,31 @@ function App() {
       <main className="max-w-7xl mx-auto px-6 py-6">
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
           {/* Sidebar - Model Filters */}
-          <aside className="lg:col-span-1">
+          <aside className="lg:col-span-1 space-y-6">
+            {/* Quick Stats */}
+            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
+              <h2 className="text-lg font-semibold mb-4">Quick Stats</h2>
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400 text-sm">Top Model Downloads</span>
+                  <span className="text-white font-medium">
+                    {data?.models[0]?.variants[0]?.totalDownloads.toLocaleString() || '—'}
+                  </span>
+                </div>
+                <div className="border-t border-gray-700"></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400 text-sm">Total Models Tracked</span>
+                  <span className="text-white font-medium">{data?.models.length || 0}</span>
+                </div>
+                <div className="border-t border-gray-700"></div>
+                <div className="flex items-center justify-between">
+                  <span className="text-gray-400 text-sm">Data Source</span>
+                  <span className={`text-sm font-medium ${useRealData ? 'text-green-400' : 'text-yellow-400'}`}>
+                    {useRealData ? 'Live' : 'Demo'}
+                  </span>
+                </div>
+              </div>
+            </div>
             <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
               <h2 className="text-lg font-semibold mb-4">Models</h2>
               <div className="space-y-2">
@@ -590,31 +616,6 @@ function App() {
                   </p>
                 </div>
               )}
-            </div>
-
-            {/* Quick Stats */}
-            <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-              <h2 className="text-lg font-semibold mb-4">Quick Stats</h2>
-              <div className="space-y-3">
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Top Model Downloads</span>
-                  <span className="text-white font-medium">
-                    {data?.models[0]?.variants[0]?.totalDownloads.toLocaleString() || '—'}
-                  </span>
-                </div>
-                <div className="border-t border-gray-700"></div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Total Models Tracked</span>
-                  <span className="text-white font-medium">{data?.models.length || 0}</span>
-                </div>
-                <div className="border-t border-gray-700"></div>
-                <div className="flex items-center justify-between">
-                  <span className="text-gray-400 text-sm">Data Source</span>
-                  <span className={`text-sm font-medium ${useRealData ? 'text-green-400' : 'text-yellow-400'}`}>
-                    {useRealData ? 'Live' : 'Demo'}
-                  </span>
-                </div>
-              </div>
             </div>
           </aside>
         </div>

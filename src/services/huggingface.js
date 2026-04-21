@@ -73,34 +73,6 @@ export async function searchModels(query, options) {
   }
 }
 
-// Get all variants of a model
-export async function fetchModelVariants(modelId) {
-  try {
-    const info = await modelInfo({
-      name: modelId,
-      hubUrl: "https://huggingface.co",
-    }, {
-      accessToken: getHfToken() ?? undefined
-    });
-    
-    // Get siblings from model info (files in the repo)
-    if (info.siblings && Array.isArray(info.siblings)) {
-      // Filter for safetensors or bin files which typically indicate model weights
-      const variants = info.siblings
-        .filter(f => f.rfilename.endsWith(".safetensors") || f.rfilename.endsWith(".bin"))
-        .map(f => f.rfilename.replace(".safetensors", "").replace(".bin", ""))
-        .slice(0, 5); // Top 5
-      
-      return [...new Set(variants)];
-    }
-    
-    return [];
-  } catch (error) {
-    console.error(`Error fetching variants for ${modelId}:`, error);
-    return [];
-  }
-}
-
 /**
  * Fetch discussions for a specific repository
  * @param {string} repoId - The repository ID (e.g., "swiss-ai/Apertus-8B-Instruct-2509")

@@ -1,0 +1,544 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Open-Source LLM Community Dashboard</title>
+  <style>
+    :root {
+      --bg: #0b0f17; --panel: #111827; --muted: #94a3b8; --text: #e5e7eb;
+      --accent: #60a5fa; --good: #34d399; --warn: #fbbf24; --bad: #f87171;
+      --border: rgba(148,163,184,.18);
+      --chip: rgba(96,165,250,.15);
+      --shadow: 0 10px 25px rgba(0,0,0,.25);
+      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: var(--sans); background: radial-gradient(1200px 800px at 20% -10%, rgba(96,165,250,.18), transparent 55%), var(--bg); color: var(--text); }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    header { padding: 22px 18px 10px; max-width: 1200px; margin: 0 auto; }
+    h1 { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
+    .sub { color: var(--muted); font-size: 13px; }
+
+    .grid {
+      max-width: 1200px; margin: 0 auto; padding: 14px 18px 30px;
+      display: grid; grid-template-columns: 360px 1fr; gap: 14px;
+    }
+    @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+    .card {
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
+    }
+    .card h2 { margin: 0; font-size: 13px; letter-spacing: .02em; color: rgba(229,231,235,.9); }
+    .card .hd { padding: 12px 12px 10px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap: 10px; }
+    .card .bd { padding: 12px; }
+
+    input[type="text"], input[type="number"], select, textarea {
+      width: 100%; padding: 10px 10px; border-radius: 10px;
+      background: rgba(17,24,39,.55); color: var(--text);
+      border: 1px solid rgba(148,163,184,.24);
+      outline: none;
+    }
+    textarea { min-height: 92px; font-family: var(--mono); font-size: 12px; }
+    input:focus, select:focus, textarea:focus { border-color: rgba(96,165,250,.65); box-shadow: 0 0 0 3px rgba(96,165,250,.15); }
+
+    .row { display:flex; gap: 10px; align-items:center; }
+    .row > * { flex: 1; }
+    .btn {
+      cursor: pointer; user-select: none;
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      padding: 10px 10px; border-radius: 10px;
+      border: 1px solid rgba(148,163,184,.24);
+      background: rgba(96,165,250,.15);
+      color: var(--text);
+      font-weight: 600; font-size: 13px;
+    }
+    .btn:hover { background: rgba(96,165,250,.22); }
+    .btn.secondary { background: rgba(148,163,184,.10); }
+
+    .chips { display:flex; flex-wrap: wrap; gap: 6px; }
+    .chip { padding: 6px 8px; border-radius: 999px; border: 1px solid rgba(148,163,184,.22); background: rgba(148,163,184,.08); font-size: 12px; color: rgba(229,231,235,.88); cursor:pointer; }
+    .chip.on { background: var(--chip); border-color: rgba(96,165,250,.45); }
+
+    .kpis { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+    .kpi { padding: 10px; border-radius: 12px; background: rgba(17,24,39,.55); border: 1px solid rgba(148,163,184,.18); }
+    .kpi .v { font-size: 18px; font-weight: 800; }
+    .kpi .l { font-size: 12px; color: var(--muted); }
+
+    .items { display:flex; flex-direction: column; gap: 10px; }
+    .item { padding: 12px; border-radius: 14px; background: rgba(17,24,39,.55); border: 1px solid rgba(148,163,184,.18); }
+    .item .t { font-weight: 750; font-size: 14px; margin-bottom: 6px; }
+    .meta { display:flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 12px; }
+    .tag { padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(148,163,184,.22); }
+    .muted { color: var(--muted); }
+    .small { font-size: 12px; }
+
+    .trend { display:flex; flex-wrap: wrap; gap: 7px; }
+    .word { border: 1px dashed rgba(148,163,184,.25); padding: 6px 8px; border-radius: 10px; font-size: 12px; color: rgba(229,231,235,.88); cursor:pointer; }
+
+    .split { display:grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    @media (max-width: 980px) { .split { grid-template-columns: 1fr; } }
+
+    .status { font-family: var(--mono); font-size: 12px; color: rgba(229,231,235,.85); }
+    .status b { color: var(--good); }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Open-Source LLM Community Dashboard</h1>
+    <div class="sub">A fast, pragmatic “what’s happening now?” view across open-source LLMs, Public AI, and major ML venues.</div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <div class="hd"><h2>Controls</h2><span class="small muted" id="lastUpdated">—</span></div>
+      <div class="bd">
+        <div style="margin-bottom:10px">
+          <label class="small muted">Search</label>
+          <input id="q" type="text" placeholder="Search titles/snippets (e.g., 'Apertus', 'open weights', 'ACL', 'NeurIPS', 'open data')" />
+        </div>
+
+        <div class="row" style="margin-bottom:10px">
+          <div>
+            <label class="small muted">Max items</label>
+            <input id="maxItems" type="number" min="20" max="500" value="120" />
+          </div>
+          <div>
+            <label class="small muted">Lookback (days)</label>
+            <input id="lookbackDays" type="number" min="1" max="365" value="21" />
+          </div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label class="small muted">Mode</label>
+          <select id="mode">
+            <option value="direct">Direct fetch (best effort)</option>
+            <option value="proxy">CORS proxy</option>
+          </select>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label class="small muted">CORS proxy URL (only used in Proxy mode)</label>
+          <input id="proxy" type="text" placeholder="Example: https://your-proxy.example.com/?url=" />
+          <div class="small muted" style="margin-top:6px">If you run your own proxy, it should return the feed XML as text for the given URL.</div>
+        </div>
+
+        <div class="row" style="margin: 12px 0 12px">
+          <button class="btn" id="refresh">Refresh</button>
+          <button class="btn secondary" id="reset">Reset</button>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label class="small muted">Watchlist (comma-separated)</label>
+          <input id="watch" type="text" />
+        </div>
+
+        <div style="margin-bottom:8px">
+          <label class="small muted">Sources (toggle)</label>
+          <div class="chips" id="sourceChips"></div>
+        </div>
+
+        <div style="margin-bottom:10px">
+          <label class="small muted">Tags (toggle)</label>
+          <div class="chips" id="tagChips"></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <div class="hd"><h2>Status</h2></div>
+          <div class="bd">
+            <div class="status" id="status">Idle.</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="hd"><h2>Now</h2><div class="small muted">Sorted by recency when available</div></div>
+      <div class="bd">
+        <div class="kpis" style="margin-bottom: 10px">
+          <div class="kpi"><div class="v" id="kpiTotal">—</div><div class="l">Items</div></div>
+          <div class="kpi"><div class="v" id="kpiSources">—</div><div class="l">Sources active</div></div>
+          <div class="kpi"><div class="v" id="kpiWatch">—</div><div class="l">Watchlist hits</div></div>
+        </div>
+
+        <div class="split" style="margin-bottom: 10px">
+          <div class="card">
+            <div class="hd"><h2>Trending keywords</h2><span class="small muted">click to search</span></div>
+            <div class="bd"><div class="trend" id="trending"></div></div>
+          </div>
+          <div class="card">
+            <div class="hd"><h2>Quick links</h2></div>
+            <div class="bd" id="links"></div>
+          </div>
+        </div>
+
+        <div class="items" id="items"></div>
+      </div>
+    </section>
+  </div>
+
+<script>
+  // -------------------- Configuration --------------------
+  const FEEDS = [
+    // Open-source LLM / model releases / engineering
+    { id: "hf_blog",   name: "Hugging Face Blog", url: "https://huggingface.co/blog/feed.xml", tags: ["Open Source LLM", "Deployments"] },
+    { id: "eleuther", name: "EleutherAI",        url: "https://blog.eleuther.ai/rss/",        tags: ["Open Source LLM", "Science"] },
+
+    // swiss-ai activity
+    // GitHub releases feed for @swiss-ai (high-signal for “what shipped”)
+    { id: "gh_swissai_releases", name: "GitHub: swiss-ai releases", url: "https://github.com/swiss-ai.atom", tags: ["Open Source LLM", "GitHub"] },
+    // Hugging Face org activity: newest models/datasets/spaces under swiss-ai
+    // (This endpoint is an RSS feed that HF exposes for org pages.)
+    { id: "hf_swissai", name: "Hugging Face: swiss-ai", url: "https://huggingface.co/organizations/swiss-ai/rss", tags: ["Open Source LLM", "Hugging Face"] },
+
+    // arXiv keyword searches
+    // arXiv exposes Atom feeds for search queries. “all:Apertus” searches title/abstract.
+    { id: "arxiv_apertus", name: "arXiv search: Apertus", url: "https://export.arxiv.org/api/query?search_query=all:Apertus&start=0&max_results=50", tags: ["Apertus", "arXiv", "Papers"] },
+
+    // Public AI / policy-ish
+    { id: "stanford_crfm", name: "CRFM (Stanford)", url: "https://crfm.stanford.edu/feed.xml", tags: ["Public AI", "Science"] },
+
+    // Venues / proceedings announcements (often via blogs)
+    { id: "neurips", name: "NeurIPS (news)", url: "https://neurips.cc/feed.xml", tags: ["NeurIPS", "Proceedings"] },
+    { id: "acl",     name: "ACL (news)",     url: "https://www.aclweb.org/anthology/feeds/acl.xml", tags: ["ACL", "Proceedings"] },
+  ];
+
+  // You can add/remove feeds above. Keep it small + high-signal.
+  // Note: if any of the RSS/Atom URLs above don’t allow browser CORS, use Proxy mode.
+
+  const DEFAULT_WATCH = [
+    "Apertus", "open weights", "open data", "open source", "fully open",
+    "dataset", "training data", "release", "weights", "license",
+    "OLMo", "Mistral", "Llama", "Qwen", "DeepSeek", "Mixtral", "Gemma",
+    "NeurIPS", "ACL", "ICLR", "EMNLP"
+  ];
+
+  const QUICK_LINKS = [
+    { label: "Papers with Code", url: "https://paperswithcode.com" },
+    { label: "arXiv cs.LG", url: "https://arxiv.org/list/cs.LG/recent" },
+    { label: "arXiv cs.CL", url: "https://arxiv.org/list/cs.CL/recent" },
+    { label: "Hugging Face Trending", url: "https://huggingface.co/models?sort=trending" },
+    { label: "Open Source Initiative", url: "https://opensource.org" },
+  ];
+
+  // -------------------- Helpers --------------------
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    items: [],
+    sourcesOn: new Set(FEEDS.map(f => f.id)),
+    tagsOn: new Set(),
+  };
+
+  function setStatus(msg) { $("status").textContent = msg; }
+  function nowISO() { return new Date().toISOString(); }
+  function daysAgo(d) { return Date.now() - d * 86400000; }
+
+  function tokenize(text) {
+    return (text || "")
+      .toLowerCase()
+      .replace(/https?:\/\/\S+/g, " ")
+      .replace(/[^a-z0-9\s\-\+\.]/g, " ")
+      .split(/\s+/)
+      .filter(w => w.length >= 3 && !STOP.has(w));
+  }
+
+  const STOP = new Set(["with","from","this","that","into","about","your","their","what","when","where","will","been","were","have","has","had","for","the","and","not","you","are","but","all","any","can","may","our","its","they","them","via","new","now","how","why","use","using","more","less","than","also"]);
+
+  function parseDateAny(str) {
+    if (!str) return null;
+    const d = new Date(str);
+    if (!isNaN(d.getTime())) return d;
+    return null;
+  }
+
+  function xmlText(el, sel) {
+    const n = el.querySelector(sel);
+    return n ? (n.textContent || "").trim() : "";
+  }
+
+  function xmlAttr(el, sel, attr) {
+    const n = el.querySelector(sel);
+    return n ? (n.getAttribute(attr) || "").trim() : "";
+  }
+
+  async function fetchFeed(url) {
+    const mode = $("mode").value;
+    const proxy = $("proxy").value.trim();
+    const target = mode === "proxy" && proxy ? (proxy + encodeURIComponent(url)) : url;
+    const res = await fetch(target, { cache: "no-store" });
+    if (!res.ok) throw new Error(`Fetch failed ${res.status} for ${url}`);
+    return await res.text();
+  }
+
+  function parseFeed(xml, feed) {
+    const doc = new DOMParser().parseFromString(xml, "text/xml");
+
+    // RSS: item; Atom: entry
+    const rssItems = Array.from(doc.querySelectorAll("item"));
+    const atomItems = Array.from(doc.querySelectorAll("entry"));
+
+    const items = (rssItems.length ? rssItems : atomItems).map((it) => {
+      const title = xmlText(it, "title");
+      const link = rssItems.length ? xmlText(it, "link") : xmlAttr(it, "link", "href") || xmlText(it, "id");
+      const desc = xmlText(it, "description") || xmlText(it, "summary") || xmlText(it, "content");
+      const pub = xmlText(it, "pubDate") || xmlText(it, "updated") || xmlText(it, "published") || "";
+      const d = parseDateAny(pub);
+      return {
+        id: feed.id + "::" + (link || title || Math.random().toString(16).slice(2)),
+        sourceId: feed.id,
+        sourceName: feed.name,
+        tags: feed.tags || [],
+        title,
+        link,
+        snippet: (desc || "").replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").trim().slice(0, 280),
+        date: d ? d.toISOString() : null,
+        dateMs: d ? d.getTime() : 0,
+      };
+    });
+
+    return items;
+  }
+
+  function buildChips() {
+    // Sources
+    const sc = $("sourceChips");
+    sc.innerHTML = "";
+    for (const f of FEEDS) {
+      const chip = document.createElement("div");
+      chip.className = "chip on";
+      chip.textContent = f.name;
+      chip.onclick = () => {
+        if (state.sourcesOn.has(f.id)) state.sourcesOn.delete(f.id);
+        else state.sourcesOn.add(f.id);
+        chip.classList.toggle("on");
+        render();
+      };
+      sc.appendChild(chip);
+    }
+
+    // Tags
+    const allTags = Array.from(new Set(FEEDS.flatMap(f => f.tags || []))).sort();
+    const tc = $("tagChips");
+    tc.innerHTML = "";
+    for (const t of allTags) {
+      const chip = document.createElement("div");
+      chip.className = "chip";
+      chip.textContent = t;
+      chip.onclick = () => {
+        if (state.tagsOn.has(t)) state.tagsOn.delete(t);
+        else state.tagsOn.add(t);
+        chip.classList.toggle("on");
+        render();
+      };
+      tc.appendChild(chip);
+    }
+  }
+
+  function watchlist() {
+    return $("watch").value
+      .split(",")
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+
+  function matchesQuery(item, q) {
+    if (!q) return true;
+    const t = (item.title + " " + item.snippet + " " + item.sourceName + " " + (item.tags||[]).join(" ")).toLowerCase();
+    return q.toLowerCase().split(/\s+/).every(tok => t.includes(tok));
+  }
+
+  function matchesFilters(item) {
+    if (!state.sourcesOn.has(item.sourceId)) return false;
+    if (state.tagsOn.size) {
+      const set = new Set(item.tags || []);
+      for (const t of state.tagsOn) if (!set.has(t)) return false;
+    }
+    // Lookback
+    const lb = Number($("lookbackDays").value || 21);
+    const cutoff = daysAgo(lb);
+    if (item.dateMs && item.dateMs < cutoff) return false;
+    return true;
+  }
+
+  function scoreWatch(item) {
+    const wl = watchlist();
+    const t = (item.title + " " + item.snippet).toLowerCase();
+    let hits = 0;
+    for (const w of wl) {
+      if (!w) continue;
+      if (t.includes(w.toLowerCase())) hits++;
+    }
+    return hits;
+  }
+
+  function renderKPIs(filtered) {
+    $("kpiTotal").textContent = filtered.length.toString();
+    $("kpiSources").textContent = new Set(filtered.map(x => x.sourceId)).size.toString();
+    $("kpiWatch").textContent = filtered.filter(x => x._watchHits > 0).length.toString();
+  }
+
+  function renderTrending(filtered) {
+    const max = Math.min(filtered.length, 80);
+    const bag = new Map();
+    for (const it of filtered.slice(0, max)) {
+      for (const w of tokenize(it.title + " " + it.snippet)) {
+        bag.set(w, (bag.get(w) || 0) + 1);
+      }
+    }
+    const top = Array.from(bag.entries())
+      .sort((a,b) => b[1] - a[1])
+      .slice(0, 18);
+
+    const el = $("trending");
+    el.innerHTML = "";
+    for (const [w, c] of top) {
+      const d = document.createElement("div");
+      d.className = "word";
+      d.textContent = `${w} · ${c}`;
+      d.onclick = () => { $("q").value = w; render(); };
+      el.appendChild(d);
+    }
+  }
+
+  function renderLinks() {
+    const el = $("links");
+    el.innerHTML = "";
+
+    const ul = document.createElement("div");
+    ul.className = "items";
+
+    for (const l of QUICK_LINKS) {
+      const it = document.createElement("div");
+      it.className = "item";
+      it.innerHTML = `<div class="t"><a href="${l.url}" target="_blank" rel="noreferrer">${l.label}</a></div>`;
+      ul.appendChild(it);
+    }
+
+    el.appendChild(ul);
+  }
+
+  function renderItems(filtered) {
+    const maxItems = Number($("maxItems").value || 120);
+    const el = $("items");
+    el.innerHTML = "";
+
+    for (const it of filtered.slice(0, maxItems)) {
+      const div = document.createElement("div");
+      div.className = "item";
+
+      const dStr = it.date ? new Date(it.date).toLocaleString() : "(no date)";
+      const watch = it._watchHits;
+
+      div.innerHTML = `
+        <div class="t"><a href="${it.link}" target="_blank" rel="noreferrer">${escapeHtml(it.title || "(untitled)")}</a></div>
+        <div class="meta">
+          <span class="tag">${escapeHtml(it.sourceName)}</span>
+          ${(it.tags||[]).map(t => `<span class="tag">${escapeHtml(t)}</span>`).join(" ")}
+          <span class="muted">${escapeHtml(dStr)}</span>
+          ${watch ? `<span class="tag" style="border-color: rgba(52,211,153,.35); color: rgba(167,243,208,.95)">watch +${watch}</span>` : ""}
+        </div>
+        <div class="small muted" style="margin-top:6px">${escapeHtml(it.snippet || "")}</div>
+      `;
+
+      el.appendChild(div);
+    }
+  }
+
+  function escapeHtml(s) {
+    return (s||"")
+      .replaceAll("&","&amp;")
+      .replaceAll("<","&lt;")
+      .replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;")
+      .replaceAll("'","&#039;");
+  }
+
+  function render() {
+    const q = $("q").value.trim();
+
+    const base = state.items
+      .map(x => ({...x, _watchHits: scoreWatch(x)}))
+      .filter(matchesFilters)
+      .filter(it => matchesQuery(it, q))
+      .sort((a,b) => (b._watchHits - a._watchHits) || (b.dateMs - a.dateMs));
+
+    renderKPIs(base);
+    renderTrending(base);
+    renderLinks();
+    renderItems(base);
+  }
+
+  async function refresh() {
+    setStatus("Fetching feeds…");
+    const start = Date.now();
+
+    const results = [];
+    let ok = 0, fail = 0;
+
+    for (const feed of FEEDS) {
+      try {
+        const xml = await fetchFeed(feed.url);
+        const items = parseFeed(xml, feed);
+        results.push(...items);
+        ok++;
+        setStatus(`Fetched ${ok}/${FEEDS.length} feeds…`);
+      } catch (e) {
+        fail++;
+        console.warn(e);
+        setStatus(`Fetched ${ok}/${FEEDS.length} feeds… (${fail} failed)`);
+      }
+    }
+
+    // De-dupe by link
+    const seen = new Set();
+    state.items = results.filter(it => {
+      const k = it.link || it.id;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    });
+
+    const ms = Date.now() - start;
+    $("lastUpdated").textContent = `Updated ${new Date().toLocaleString()} (${ms} ms)`;
+    setStatus(`Done. <b>${ok}</b> feeds ok, ${fail} failed. Items: ${state.items.length}`);
+    // status supports no HTML; keep it text-only.
+    setStatus(`Done. ${ok} feeds ok, ${fail} failed. Items: ${state.items.length}.`);
+
+    render();
+  }
+
+  function resetAll() {
+    $("q").value = "";
+    $("maxItems").value = 120;
+    $("lookbackDays").value = 21;
+    $("mode").value = "direct";
+    $("proxy").value = "";
+    $("watch").value = DEFAULT_WATCH.join(", ");
+
+    state.sourcesOn = new Set(FEEDS.map(f => f.id));
+    state.tagsOn = new Set();
+
+    buildChips();
+    render();
+  }
+
+  // -------------------- Init --------------------
+  $("watch").value = DEFAULT_WATCH.join(", ");
+  buildChips();
+  renderLinks();
+
+  $("q").addEventListener("input", () => render());
+  $("maxItems").addEventListener("input", () => render());
+  $("lookbackDays").addEventListener("input", () => render());
+
+  $("refresh").onclick = refresh;
+  $("reset").onclick = resetAll;
+
+  // First load (don’t auto-fetch to avoid surprising network calls)
+  setStatus("Idle. Click Refresh.");
+</script>
+</body>
+</html>

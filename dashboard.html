@@ -1,0 +1,1305 @@
+<!doctype html>
+<!--
+  Swiss AI Search Observatory — Dashboard
+  =======================================
+  A single-file, dependency-free web application for tracking how
+  AI search products represent Swiss AI research institutions.
+
+  Licensed under the Apache License, Version 2.0.
+  Font: Inter (SIL Open Font License 1.1) via Google Fonts, with graceful
+  fallback to system-ui sans-serif when offline.
+
+  No API keys, build step, or JavaScript libraries are required.
+  Upload this file as index.html to any static server or open it directly
+  in a browser. All user data stays in localStorage; nothing is sent
+  externally.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A manual AI search visibility tracker for the Swiss AI research ecosystem. Open source under Apache 2.0.">
+  <meta name="author" content="Swiss AI Initiative">
+  <meta name="license" content="Apache-2.0">
+  <meta name="keywords" content="Swiss AI, AI search, visibility, observatory, open source, EPFL, ETH, CSCS, SNAI">
+  <title>Swiss AI · Search Observatory</title>
+
+  <!-- Open-source font: Inter (SIL Open Font License 1.1).
+       Degrades gracefully to system-ui sans-serif if the CDN is unreachable. -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+
+  <!-- Machine-readable license reference -->
+  <link rel="license" href="https://www.apache.org/licenses/LICENSE-2.0">
+
+  <style>
+    /* ====================================================================
+       Design tokens (CSS custom properties)
+       ==================================================================== */
+    :root {
+      --ink: #152b3a;
+      --muted: #526774;
+      --line: #dbe3e8;
+      --bg: #f2f5f8;
+      --blue: #1757cf;
+      --teal: #08796e;
+      --amber: #956000;
+    }
+
+    /* ====================================================================
+       Base reset & typography
+       ==================================================================== */
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--bg);
+      color: var(--ink);
+      font: 16px/1.5 'Inter', system-ui, sans-serif;
+    }
+
+    button, input, select, textarea { font: inherit; }
+    button { cursor: pointer; }
+
+    /* ====================================================================
+       Buttons & interactive controls
+       ==================================================================== */
+    button, .button {
+      border: 1px solid var(--line);
+      background: white;
+      border-radius: 7px;
+      padding: 9px 14px;
+      color: var(--ink);
+      font-weight: 600;
+    }
+    button:hover { border-color: var(--blue); }
+
+    /* Keyboard focus ring for all focusable elements. */
+    button:focus-visible,
+    input:focus-visible,
+    select:focus-visible,
+    textarea:focus-visible,
+    a:focus-visible {
+      outline: 3px solid #85acff;
+      outline-offset: 2px;
+    }
+
+    .primary {
+      background: var(--blue);
+      color: white;
+      border-color: var(--blue);
+    }
+
+    /* ====================================================================
+       Header
+       ==================================================================== */
+    header {
+      background: #102b3d;
+      color: white;
+      padding: 25px max(24px, calc((100vw - 1280px) / 2));
+      border-top: 5px solid #ee343e;
+    }
+    .brand {
+      font-size: 14px;
+      letter-spacing: .15em;
+      text-transform: uppercase;
+      color: #bed3e3;
+    }
+    .brand img {
+        float: left;
+        margin-right: 8px;
+        height: 80px;
+    }
+    h1 { font-size: 30px; margin: 7px 0 2px; letter-spacing: -.04em; }
+    h2 { font-size: 21px; letter-spacing: -.025em; margin: 0; }
+    h3 { font-size: 16px; margin: 0; }
+    p { margin: 6px 0 16px; }
+    .sub { color: #c5d5df; }
+
+    /* ====================================================================
+       Layout
+       ==================================================================== */
+    main { max-width: 1328px; margin: auto; padding: 24px; }
+
+    .row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .actions { display: flex; gap: 8px; flex-wrap: wrap; }
+
+    /* ====================================================================
+       Banner & filters
+       ==================================================================== */
+    .banner {
+      padding: 13px 16px;
+      border: 1px solid #d4dff0;
+      background: #eaf0ff;
+      border-radius: 8px;
+      margin-bottom: 18px;
+      font-size: 14px;
+    }
+
+    .filters {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin: 20px 0;
+    }
+    .filters label { flex: 1; min-width: 140px; }
+
+    label { display: block; font-size: 14px; font-weight: 600; }
+
+    select, input, textarea {
+      display: block;
+      width: 100%;
+      border: 1px solid #bac8d1;
+      background: white;
+      color: var(--ink);
+      border-radius: 6px;
+      padding: 9px;
+      margin-top: 5px;
+    }
+    textarea { resize: vertical; }
+
+    /* ====================================================================
+       Stat cards
+       ==================================================================== */
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .card, .panel {
+      background: white;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+    }
+    .card { padding: 19px; }
+    .card .num {
+      display: block;
+      font-size: 34px;
+      font-weight: 650;
+      letter-spacing: -.05em;
+      margin: 4px 0;
+    }
+
+    .muted, small { color: var(--muted); }
+    small { font-size: 13px; }
+
+    /* ====================================================================
+       Two-column grid (institution table + product bars)
+       ==================================================================== */
+    .grid {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 20px;
+    }
+
+    .panel { padding: 21px; margin-bottom: 22px; }
+
+    /* ====================================================================
+       Tables
+       ==================================================================== */
+    .table-wrap { overflow: auto; }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      text-align: left;
+      margin-top: 16px;
+    }
+    th { color: var(--muted); font-weight: 500; font-size: 13px; }
+    td, th { padding: 12px 9px; border-bottom: 1px solid #e7edf0; }
+    td:first-child, th:first-child { padding-left: 0; }
+
+    .rate { font-weight: 650; }
+
+    /* ====================================================================
+       Pills & badges
+       ==================================================================== */
+    .pill {
+      display: inline-block;
+      background: #edf2f6;
+      border-radius: 5px;
+      font-size: 12px;
+      padding: 3px 7px;
+      font-weight: 650;
+    }
+    .p0 { background: #ffe7e8; color: #9d2830; }
+    .p1 { background: #fff1d8; color: #815100; }
+    .p2 { background: #eaf0ff; color: #244c9e; }
+
+    /* ====================================================================
+       Visibility bar chart (pure CSS)
+       ==================================================================== */
+    .bar {
+      display: flex;
+      height: 10px;
+      background: #e9eef2;
+      border-radius: 3px;
+      overflow: hidden;
+      margin: 8px 0 5px;
+    }
+    .bar span { height: 100%; }
+    .cited    { background: var(--blue); }
+    .mentioned{ background: #59a7b3; }
+    .omitted  { background: #d3dce2; }
+
+    .legend {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: var(--muted);
+      flex-wrap: wrap;
+    }
+    .legend i {
+      display: inline-block;
+      width: 9px;
+      height: 9px;
+      margin-right: 5px;
+    }
+
+    .engine { margin-top: 20px; }
+
+    /* ====================================================================
+       Checklist
+       ==================================================================== */
+    .check {
+      display: flex;
+      gap: 12px;
+      padding: 15px 0;
+      border-bottom: 1px solid #e7edf0;
+      align-items: flex-start;
+    }
+    .check input { width: 19px; height: 19px; flex-shrink: 0; margin-top: 4px; }
+    .check label { font-size: 16px; cursor: pointer; }
+    .check p { font-size: 14px; margin: 4px 0 0; color: var(--muted); font-weight: 400; }
+    .check input:checked + div label { text-decoration: line-through; color: var(--muted); }
+
+    .strategy {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0 28px;
+    }
+
+    /* ====================================================================
+       Prompt bank
+       ==================================================================== */
+    .prompt { padding: 15px 0; border-bottom: 1px solid var(--line); }
+    .prompt p { font-size: 14px; margin: 7px 0; }
+    .prompt button { font-size: 13px; padding: 5px 10px; }
+
+    .empty { padding: 25px 0; color: var(--muted); }
+
+    /* ====================================================================
+       Dialog (modal editor & viewer)
+       ==================================================================== */
+    dialog {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 25px;
+      width: min(760px, 94vw);
+      max-height: 92vh;
+      color: var(--ink);
+    }
+    dialog::backdrop { background: #102b3d99; }
+
+    .formgrid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin: 16px 0;
+    }
+    .full { grid-column: 1 / -1; }
+
+    .ratings { background: var(--bg); padding: 12px; border-radius: 8px; }
+    .ratings .formgrid { margin: 8px 0; }
+
+    .error { color: #a22432; }
+
+    /* ====================================================================
+       Toast notification
+       ==================================================================== */
+    #notice {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #102b3d;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      z-index: 5;
+      max-width: 90vw;
+    }
+
+    /* ====================================================================
+       Footer & details
+       ==================================================================== */
+    footer { font-size: 13px; color: var(--muted); padding-bottom: 24px; }
+    a { color: var(--blue); }
+    summary { cursor: pointer; font-weight: 600; }
+    details p, details li { font-size: 14px; }
+    .delete { font-size: 13px; padding: 4px 8px; }
+
+    /* ====================================================================
+       Responsive breakpoints
+       ==================================================================== */
+    @media (max-width: 850px) {
+      .grid { grid-template-columns: 1fr; }
+      .stats { grid-template-columns: 1fr 1fr; }
+      .strategy { grid-template-columns: 1fr; }
+    }
+
+    @media (max-width: 500px) {
+      main { padding: 16px; }
+      .card { padding: 12px; }
+      .formgrid { grid-template-columns: 1fr; }
+      .full { grid-column: auto; }
+      h1 { font-size: 26px; }
+      .panel { padding: 16px; }
+      .filters label { min-width: 130px; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ==========================================================================
+     Page header
+     ========================================================================== -->
+<header>
+  <div class="brand">
+      <img src="huggingface-mouse.jpeg" alt="Hugging Face mouse">
+  </div>
+  <h1>Swiss AI Observatory</h1>
+  <div class="sub">swiss-ai.org</div>
+</header>
+
+<main>
+  <!-- ======================================================================
+       Overview row: title + action buttons
+       ====================================================================== -->
+  <div class="row">
+    <div>
+      <h2>Visibility overview</h2>
+      <p class="muted">A repeatable snapshot of how AI answers represent Swiss AI research.</p>
+    </div>
+    <div class="actions">
+      <button id="export">Export JSON</button>
+      <button id="import">Import JSON</button>
+      <button class="primary" id="add">+ Record a search</button>
+    </div>
+  </div>
+
+  <!-- Banner: switches between sample-data and user-data notice -->
+  <div id="banner" class="banner"></div>
+
+  <!-- ======================================================================
+       Filters: dataset, AI product, topic, date range
+       ====================================================================== -->
+  <div class="filters">
+    <label>Dataset
+      <select id="dataset">
+        <option value="demo">Sample observations</option>
+        <option value="live">My observations</option>
+      </select>
+    </label>
+    <label>AI product
+      <select id="engine">
+        <option value="">All products</option>
+      </select>
+    </label>
+    <label>Topic
+      <select id="topic">
+        <option value="">All topics</option>
+      </select>
+    </label>
+    <label>From
+      <input type="date" id="from">
+    </label>
+    <label>Through
+      <input type="date" id="to">
+    </label>
+  </div>
+
+  <!-- Summary stat cards (populated by render()) -->
+  <div class="stats" id="stats"></div>
+
+  <!-- ======================================================================
+       Two-column grid: institution table + product visibility bars
+       ====================================================================== -->
+  <div class="grid">
+    <section class="panel">
+      <div class="row">
+        <h2>Institution representation</h2>
+        <span class="pill">Manual assessment</span>
+      </div>
+      <small>Only assessed institutions enter each denominator. A citation must link to an institution-owned source.</small>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Institution</th>
+              <th>Assessed</th>
+              <th>Cited</th>
+              <th>Mentioned¹</th>
+              <th>Omitted</th>
+              <th>Issues²</th>
+            </tr>
+          </thead>
+          <tbody id="institutions"></tbody>
+        </table>
+      </div>
+      <small>¹ Unlinked mentions only. ² Assessments flagged inaccurate or misattributed.</small>
+    </section>
+
+    <section class="panel">
+      <h2>Visibility by AI product</h2>
+      <div class="legend">
+        <span><i class="cited"></i>Cited</span>
+        <span><i class="mentioned"></i>Mentioned</span>
+        <span><i class="omitted"></i>Omitted</span>
+      </div>
+      <div id="products"></div>
+    </section>
+  </div>
+
+  <!-- ======================================================================
+       Topic coverage table
+       ====================================================================== -->
+  <section class="panel">
+    <h2>Topic coverage</h2>
+    <small>Rates combine assessed institution–answer pairs, not market share. Uneven sampling can skew comparisons.</small>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Topic</th>
+            <th>Searches</th>
+            <th>Assessments</th>
+            <th>Citation rate</th>
+            <th>Mention or citation</th>
+            <th>Issues</th>
+          </tr>
+        </thead>
+        <tbody id="topics"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       Observation log
+       ====================================================================== -->
+  <section class="panel">
+    <div class="row">
+      <h2>Observation log</h2>
+      <span id="count" class="muted"></span>
+    </div>
+    <small>Select an observation to inspect the answer, prompt, sources, and assessments.</small>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Product / mode</th>
+            <th>Topic &amp; prompt</th>
+            <th>Language</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="log"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ======================================================================
+       Prompt bank: copy-and-record workflow
+       ====================================================================== -->
+  <section class="panel">
+    <div class="row">
+      <div>
+        <h2>Prompt bank</h2>
+        <small>Copy a prompt into an AI product, then record the result. Repeat in fresh conversations.</small>
+      </div>
+    </div>
+    <div id="prompts"></div>
+  </section>
+
+  <!-- ======================================================================
+       Strategy → action checklist
+       ====================================================================== -->
+  <section class="panel">
+    <div class="row">
+      <div>
+        <h2>Strategy → action</h2>
+        <p class="muted">Prioritize reliable evidence and correct attribution; test formatting tactics.</p>
+      </div>
+      <span class="pill" id="progress"></span>
+    </div>
+    <div class="strategy" id="checklist"></div>
+  </section>
+
+  <!-- ======================================================================
+       Methodology, interpretation & deployment (collapsible)
+       ====================================================================== -->
+  <section class="panel">
+    <details>
+      <summary>Methodology, interpretation &amp; deployment</summary>
+      <p>One observation is one answer from one product. Assess each relevant institution as cited (a direct link to an institution-owned source), mentioned (named without that link), omitted (neither), or not assessed. Third-party citations can be noted separately. Mark accuracy only where you have checked it against evidence.</p>
+      <p>Citation rate = cited assessments ÷ all assessed institution–answer pairs. Representation = cited or mentioned assessments ÷ all assessed pairs. Issue rate = inaccurate or misattributed assessments ÷ accuracy-reviewed assessments. Unknown accuracy is excluded. These are sample rates, not citation share of voice or population estimates. Repeated prompts count as separate observations.</p>
+      <p>Use a stable prompt set, include both branded and unbranded questions, and repeat each prompt several times. Record model, search mode, language, date and exact response. Keep API and consumer product observations distinct using mode. Compare equivalent samples; this prototype does not infer statistical significance or automatically verify claims.</p>
+      <p>All records and checklist states stay in this browser's local storage. Export JSON for backups or transfer; importing replaces your observations and checklist after confirmation. Sample data is fictional and is never included in exports. Hosting this HTML does not share records between users. No API keys, dependencies or build step are needed: upload this file as index.html to a static server. Browser storage may differ when opening files directly or moving between hosts.</p>
+      <p>This dashboard is open-source software released under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Apache License 2.0</a>. The interface font, <a href="https://fonts.google.com/specimen/Inter" target="_blank" rel="noopener noreferrer">Inter</a>, is licensed under the SIL Open Font License 1.1. No proprietary JavaScript libraries or frameworks are used.</p>
+      <p>Strategy references: <a href="https://developers.google.com/search/docs/appearance/ai-features" target="_blank" rel="noopener noreferrer">Google's AI search guidance</a> · <a href="https://arxiv.org/html/2311.09735v3" target="_blank" rel="noopener noreferrer">GEO research paper</a>. Formatting experiments are hypotheses, not guaranteed ranking factors.</p>
+    </details>
+  </section>
+
+  <footer>Independent planning prototype · Open source (Apache 2.0) · Not an official institutional dashboard · No automated searches or external requests</footer>
+</main>
+
+<!-- ==========================================================================
+     Editor dialog: record or edit an AI search observation
+     ========================================================================== -->
+<dialog id="editor" aria-label="Record an AI search observation">
+  <form id="form">
+    <div class="row">
+      <h2>Record an AI search</h2>
+      <button type="button" id="close">Close</button>
+    </div>
+    <p class="muted">Paste the answer and assess the institutions relevant to this prompt.</p>
+
+    <div class="formgrid">
+      <label>Date
+        <input name="date" type="date" required>
+      </label>
+      <label>Product
+        <select name="product" required></select>
+      </label>
+      <label>Topic
+        <select name="topic" required></select>
+      </label>
+      <label>Language
+        <input name="language" value="English" required maxlength="80">
+      </label>
+      <label>Model / version
+        <input name="model" placeholder="As shown in the product" maxlength="150">
+      </label>
+      <label>Mode
+        <select name="mode">
+          <option>Consumer · search enabled</option>
+          <option>Consumer · search disabled</option>
+          <option>Consumer · search status unknown</option>
+          <option>API · search enabled</option>
+          <option>API · search disabled</option>
+        </select>
+      </label>
+      <label class="full">Exact prompt
+        <textarea name="prompt" rows="2" required maxlength="20000"></textarea>
+      </label>
+      <label class="full">Answer / excerpt
+        <textarea name="answer" rows="5" required maxlength="100000" placeholder="Paste the response. If shortened, mark it as an excerpt."></textarea>
+      </label>
+    </div>
+
+    <!-- Per-institution rating controls are generated by JavaScript. -->
+    <div id="ratings"></div>
+
+    <label>Source URLs and reviewer notes
+      <textarea name="notes" rows="3" maxlength="30000" placeholder="Include citation URLs, third-party coverage, and evidence for any accuracy issue."></textarea>
+    </label>
+
+    <p id="formerror" class="error" role="alert"></p>
+    <button class="primary" type="submit">Save observation</button>
+  </form>
+</dialog>
+
+<!-- ==========================================================================
+     Viewer dialog: inspect an existing observation
+     ========================================================================== -->
+<dialog id="viewer" aria-label="Observation details">
+  <div class="row">
+    <h2>Observation details</h2>
+    <button id="viewclose">Close</button>
+  </div>
+  <div id="detail"></div>
+</dialog>
+
+<!-- Hidden file input for JSON import -->
+<input id="file" type="file" accept=".json,application/json" hidden>
+
+<!-- Toast notification element -->
+<div id="notice" role="status" hidden></div>
+
+<script>
+'use strict';
+
+/* ============================================================================
+ * Swiss AI Search Observatory — Dashboard Application
+ *
+ * A single-file, dependency-free web application for manually tracking how
+ * AI search products represent Swiss AI research institutions.
+ *
+ * Licensed under the Apache License, Version 2.0.
+ * Uses Inter font (SIL Open Font License 1.1) via Google Fonts.
+ * No other external resources, API keys, or build step required.
+ *
+ * Data model
+ * ----------
+ * state: {
+ *   version: 1,              // schema version for future migrations
+ *   records: Observation[],  // user-recorded AI search observations
+ *   checks: number[]         // indices of completed checklist tasks
+ * }
+ *
+ * Observation: {
+ *   id:       string,              // unique identifier
+ *   date:     string (YYYY-MM-DD),  // date the observation was made
+ *   product:  string,              // AI product name (must be in PRODUCTS)
+ *   topic:    string,              // research topic (must be in TOPICS)
+ *   language: string,              // language of the prompt
+ *   model:    string,              // model/version as shown in the product
+ *   mode:     string,              // consumer/API and search status
+ *   prompt:   string,              // exact prompt used
+ *   answer:   string,              // AI response or excerpt
+ *   notes:    string,              // source URLs and reviewer notes
+ *   ratings: {                     // per-institution assessment
+ *     [institution]: {
+ *       status:   'cited' | 'mentioned' | 'omitted' | 'na',
+ *       accuracy: 'unknown' | 'accurate' | 'issue'
+ *     }
+ *   }
+ * }
+ * ========================================================================== */
+
+/* ---------------------------------------------------------------------------
+ * Configuration constants
+ * ------------------------------------------------------------------------- */
+
+/** Institutions assessed for AI search visibility. */
+const ENT = [
+  'EPFL AI Center',
+  'ETH AI Center',
+  'CSCS',
+  'SNAI'
+];
+
+/** AI products whose answers are observed. */
+const PRODUCTS = [
+  'ChatGPT',
+  'Gemini',
+  'Perplexity',
+  'Claude',
+  'Google AI Overviews',
+  'Google AI Mode'
+];
+
+/** Research topics used for categorisation and prompt banking. */
+const TOPICS = [
+  'Open foundation models',
+  'Apertus',
+  'Trustworthy AI',
+  'AI for science',
+  'AI infrastructure',
+  'Swiss AI ecosystem'
+];
+
+/**
+ * Prompt bank entries: [topic, branded/unbranded, prompt text].
+ * Users copy these into AI products, then record the result.
+ */
+const BANK = [
+  ['Open foundation models', 'Unbranded', 'Which European institutions develop open foundation models, and what evidence supports their work?'],
+  ['Apertus', 'Branded', 'What is Apertus, who developed it, and where can I find its model card and evaluations?'],
+  ['Trustworthy AI', 'Unbranded', 'Which Swiss research groups work on evaluating the reliability and safety of generative AI?'],
+  ['AI for science', 'Unbranded', 'Which Swiss institutions apply AI to scientific discovery? Give concrete research examples and sources.'],
+  ['AI infrastructure', 'Branded', 'What role do CSCS and the Alps supercomputer play in the Swiss AI Initiative?'],
+  ['Swiss AI ecosystem', 'Branded', 'How do the EPFL AI Center, ETH AI Center, SNAI, and Swiss AI Initiative relate to each other?']
+];
+
+/**
+ * Strategy checklist tasks: [priority, title, description].
+ * P0 = immediate, P1 = next, P2 = experimental.
+ */
+const TASKS = [
+  ['P0', 'Clarify institutional roles', 'Publish consistent explanations of the centers, SNAI, the Swiss AI Initiative, laboratories, and infrastructure partners.'],
+  ['P0', 'Make flagship results verifiable', 'Connect each result to its paper, model card, code, evaluations, license, contributors, and release history.'],
+  ['P0', 'Check search accessibility', 'Review indexing, crawler access, internal links, canonical URLs, and whether key content is available as text.'],
+  ['P0', 'Establish a repeatable baseline', 'Use branded and unbranded prompts. Record mode and language; repeat runs and review attribution accuracy.'],
+  ['P1', 'Improve answer clarity', 'Lead with a concise answer. Use relevant headings, tables, dated figures, and links to primary evidence.'],
+  ['P1', 'Show authorship and ownership', 'Maintain researcher bios and bylines. Attribute each partner\u2019s actual contribution to joint work.'],
+  ['P1', 'Maintain research evidence', 'Assign page owners and review dates. Update results, documentation, and outdated claims together.'],
+  ['P1', 'Earn independent recognition', 'Help evaluators, researchers, and journalists find and scrutinize original work; track third-party evidence.'],
+  ['P2', 'Test formatting changes', 'Compare equivalent prompt samples before and after changes. Treat quotations and schema as experiments.'],
+  ['P2', 'Support researcher communication', 'Share useful technical explanations on relevant channels, linking back to durable sources.']
+];
+
+/* ---------------------------------------------------------------------------
+ * Utility functions
+ * ------------------------------------------------------------------------- */
+
+/** localStorage key for persisting user data. */
+const KEY = 'swiss-ai-observatory-v1';
+
+/** Shortcut for document.getElementById. */
+const $ = id => document.getElementById(id);
+
+/**
+ * Escapes HTML special characters in a string to prevent XSS
+ * when inserting user content into innerHTML.
+ * @param {string} s - The string to escape.
+ * @returns {string} The escaped string.
+ */
+const esc = s => String(s).replace(/[&<>"']/g, c => ({
+  '&': '&amp;',
+  '<': '&lt;',
+  '>': '&gt;',
+  '"': '&quot;',
+  "'": '&#39;'
+}[c]));
+
+/* ---------------------------------------------------------------------------
+ * State management
+ * ------------------------------------------------------------------------- */
+
+/** Application state, persisted to localStorage. */
+let state = { version: 1, records: [], checks: [] };
+
+/** ID of the observation being edited, or null for a new record. */
+let editId = null;
+
+/**
+ * Validates a parsed state object against the expected schema.
+ * Checks version, array types, record field types, date format,
+ * product/topic membership, and per-institution rating values.
+ * @param {object} x - The parsed state to validate.
+ * @returns {boolean} True if the state is valid.
+ */
+function valid(x) {
+  if (!x || x.version !== 1 ||
+      !Array.isArray(x.records) || x.records.length > 10000 ||
+      !Array.isArray(x.checks) ||
+      x.checks.some(n => !Number.isInteger(n) || n < 0 || n >= TASKS.length))
+    return false;
+
+  const ids = new Set();
+  return x.records.every(r => {
+    if (!r || typeof r.id !== 'string' || ids.has(r.id)) return false;
+    ids.add(r.id);
+    return ['date', 'product', 'topic', 'language', 'model', 'mode', 'prompt', 'answer', 'notes']
+        .every(k => typeof r[k] === 'string' && r[k].length <= 100000)
+      && /^\d{4}-\d{2}-\d{2}$/.test(r.date) && !isNaN(Date.parse(r.date))
+      && PRODUCTS.includes(r.product) && TOPICS.includes(r.topic)
+      && r.prompt.trim() && r.answer.trim()
+      && r.ratings && ENT.every(e =>
+        r.ratings[e] &&
+        ['cited', 'mentioned', 'omitted', 'na'].includes(r.ratings[e].status) &&
+        ['unknown', 'accurate', 'issue'].includes(r.ratings[e].accuracy)
+      );
+  });
+}
+
+// Attempt to load saved state from localStorage on startup.
+try {
+  const raw = localStorage.getItem(KEY);
+  if (raw) {
+    const parsed = JSON.parse(raw);
+    if (valid(parsed)) state = parsed;
+    else throw Error();
+  }
+} catch {
+  setTimeout(() => notify('Stored data could not be loaded. Import a valid backup if needed.'), 100);
+}
+
+/**
+ * Persists state to localStorage as JSON.
+ * @returns {boolean} True if saving succeeded.
+ */
+function save() {
+  try {
+    localStorage.setItem(KEY, JSON.stringify(state));
+    return true;
+  } catch {
+    notify('Browser storage unavailable or full. Export now to keep your changes.');
+    return false;
+  }
+}
+
+/**
+ * Displays a transient notification message at the bottom of the screen.
+ * The message auto-dismisses after 5.5 seconds.
+ * @param {string} msg - The message to show.
+ */
+function notify(msg) {
+  $('notice').textContent = msg;
+  $('notice').hidden = false;
+  clearTimeout(notify.timer);
+  notify.timer = setTimeout(() => $('notice').hidden = true, 5500);
+}
+
+/* ---------------------------------------------------------------------------
+ * Demo data (synthetic, never included in exports)
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Generates 24 fictional sample observations for interface demonstration.
+ * Uses the prompt bank, cycling through products and institutions to
+ * produce varied ratings without representing real AI responses.
+ */
+const demo = Array.from({ length: 24 }, (_, i) => {
+  const b = BANK[i % 6];
+  return {
+    id: 'sample-' + i,
+    date: '2026-09-' + String(1 + Math.floor(i / 4)).padStart(2, '0'),
+    product: PRODUCTS[i % 4],
+    topic: b[0],
+    language: 'English',
+    model: 'Illustrative sample',
+    mode: 'Consumer · search enabled',
+    prompt: b[2],
+    answer: 'FICTIONAL SAMPLE — This placeholder illustrates a recorded answer. It is not an actual AI response and provides no evidence about any institution\u2019s visibility.',
+    notes: 'Synthetic data for interface demonstration only.',
+    ratings: Object.fromEntries(ENT.map((e, j) => [
+      e,
+      {
+        status: ['cited', 'mentioned', 'omitted', 'cited', 'na'][(i + j * 2) % 5],
+        accuracy: (i + j) % 7 === 0 ? 'issue' : (i + j) % 3 === 0 ? 'unknown' : 'accurate'
+      }
+    ]))
+  };
+});
+
+/* ---------------------------------------------------------------------------
+ * UI helper functions
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Builds HTML <option> elements from an array of strings.
+ * @param {string[]} items - Option labels.
+ * @returns {string} HTML string of <option> elements.
+ */
+function options(items) {
+  return items.map(x => '<option>' + esc(x) + '</option>').join('');
+}
+
+/**
+ * Returns the currently filtered list of observations.
+ * Uses demo data when the "sample" dataset is selected, otherwise
+ * the user's own records. Applies product, topic, and date filters.
+ * @returns {object[]} Filtered observations.
+ */
+function records() {
+  return ($('dataset').value === 'demo' ? demo : state.records).filter(r =>
+    (!$('engine').value || r.product === $('engine').value) &&
+    (!$('topic').value || r.topic === $('topic').value) &&
+    (!$('from').value || r.date >= $('from').value) &&
+    (!$('to').value || r.date <= $('to').value)
+  );
+}
+
+/**
+ * Aggregates institution-assessment metrics from a set of observations.
+ * @param {object[]} rs - Observations to measure.
+ * @param {string} [entity] - If given, measure only this institution;
+ *   otherwise measure all assessed ratings across institutions.
+ * @returns {{n:number,c:number,m:number,o:number,issues:number,reviewed:number}}
+ */
+function measures(rs, entity) {
+  const a = rs.flatMap(r =>
+    (entity ? [r.ratings[entity]] : Object.values(r.ratings))
+      .filter(v => v.status !== 'na')
+  );
+  return {
+    n: a.length,
+    c: a.filter(v => v.status === 'cited').length,
+    m: a.filter(v => v.status === 'mentioned').length,
+    o: a.filter(v => v.status === 'omitted').length,
+    issues: a.filter(v => v.accuracy === 'issue').length,
+    reviewed: a.filter(v => v.accuracy !== 'unknown').length
+  };
+}
+
+/**
+ * Formats a percentage from a numerator and denominator.
+ * Returns '—' (em dash) when the denominator is zero.
+ * @param {number} n - Numerator.
+ * @param {number} d - Denominator.
+ * @returns {string} Percentage string or '—'.
+ */
+const pct = (n, d) => d ? Math.round(n / d * 100) + '%' : '—';
+
+/* ---------------------------------------------------------------------------
+ * DOM initialisation: populate selects and rating controls
+ * ------------------------------------------------------------------------- */
+
+// Populate filter dropdowns with available products and topics.
+$('engine').insertAdjacentHTML('beforeend', options(PRODUCTS));
+$('topic').insertAdjacentHTML('beforeend', options(TOPICS));
+
+// Cache the form element for repeated use in event handlers.
+const f = $('form');
+
+// Populate the editor form's product and topic selects.
+f.elements.product.innerHTML = options(PRODUCTS);
+f.elements.topic.innerHTML = options(TOPICS);
+
+// Generate per-institution representation and accuracy rating controls.
+// Field names use numeric suffixes (status0, status1, …) so the submit
+// handler can read them via f.elements['status' + i].
+$('ratings').innerHTML = ENT.map((e, i) =>
+  '<div class="ratings"><h3>' + esc(e) + '</h3>' +
+  '<div class="formgrid">' +
+    '<label>Representation<select name="status' + i + '">' +
+      '<option value="na">Not assessed / not relevant</option>' +
+      '<option value="cited">Cited · institution-owned link</option>' +
+      '<option value="mentioned">Mentioned · no owned link</option>' +
+      '<option value="omitted">Omitted</option>' +
+    '</select></label>' +
+    '<label>Accuracy / attribution<select name="accuracy' + i + '">' +
+      '<option value="unknown">Not reviewed</option>' +
+      '<option value="accurate">Reviewed · correct</option>' +
+      '<option value="issue">Issue found</option>' +
+    '</select></label>' +
+  '</div></div>'
+).join('');
+
+/* ---------------------------------------------------------------------------
+ * Rendering
+ * ------------------------------------------------------------------------- */
+
+/**
+ * Re-renders all dynamic content based on the current filter state.
+ * Updates the banner, stat cards, institution table, product bars,
+ * topic table, and the observation log.
+ */
+function render() {
+  const rs = records();
+  const m = measures(rs);
+  const sample = $('dataset').value === 'demo';
+
+  // --- Banner: indicates sample vs. user data ---
+  $('banner').textContent = sample
+    ? 'SAMPLE DATA · All observations and scores below are fictional. Switch to \u201CMy observations\u201D to establish your baseline.'
+    : 'YOUR DATA · Manually recorded observations, saved in this browser. Export regularly for backup; records are not shared across devices.';
+
+  // --- Summary stat cards ---
+  $('stats').innerHTML = [
+    ['Searches recorded', rs.length, m.n + ' institution assessments'],
+    ['Direct citation rate', pct(m.c, m.n), m.c + ' cited / ' + m.n + ' assessed'],
+    ['Mention or citation', pct(m.c + m.m, m.n), (m.c + m.m) + ' represented / ' + m.n + ' assessed'],
+    ['Accuracy issue rate', pct(m.issues, m.reviewed), m.issues + ' issues / ' + m.reviewed + ' reviewed']
+  ].map(([l, n, d]) =>
+    '<div class="card"><span class="muted">' + l + '</span>' +
+    '<span class="num">' + n + '</span><small>' + d + '</small></div>'
+  ).join('');
+
+  // --- Institution representation table ---
+  $('institutions').innerHTML = ENT.map(e => {
+    const a = measures(rs, e);
+    return '<tr><td><strong>' + e + '</strong></td>' +
+      '<td>' + a.n + '</td>' +
+      '<td class="rate">' + pct(a.c, a.n) + '</td>' +
+      '<td>' + pct(a.m, a.n) + '</td>' +
+      '<td>' + pct(a.o, a.n) + '</td>' +
+      '<td>' + a.issues + '</td></tr>';
+  }).join('');
+
+  // --- Visibility by AI product (CSS stacked bars) ---
+  $('products').innerHTML = PRODUCTS
+    .filter(p => !$('engine').value || p === $('engine').value)
+    .map(p => {
+      const a = measures(rs.filter(r => r.product === p));
+      return '<div class="engine"><div class="row"><strong>' + p + '</strong>' +
+        '<small>' + a.n + ' assessments · ' + pct(a.c, a.n) + ' cited</small></div>' +
+        '<div class="bar" aria-label="' + p + ': ' + a.c + ' cited, ' + a.m + ' mentioned, ' + a.o + ' omitted">' +
+        [['cited', a.c], ['mentioned', a.m], ['omitted', a.o]]
+          .map(([c, n]) => '<span class="' + c + '" style="width:' + (a.n ? n / a.n * 100 : 0) + '%"></span>')
+          .join('') +
+        '</div></div>';
+    }).join('');
+
+  // --- Topic coverage table ---
+  $('topics').innerHTML = TOPICS
+    .filter(t => !$('topic').value || t === $('topic').value)
+    .map(t => {
+      const rr = rs.filter(r => r.topic === t);
+      const a = measures(rr);
+      return '<tr><td><strong>' + t + '</strong></td>' +
+        '<td>' + rr.length + '</td>' +
+        '<td>' + a.n + '</td>' +
+        '<td>' + pct(a.c, a.n) + '</td>' +
+        '<td>' + pct(a.c + a.m, a.n) + '</td>' +
+        '<td>' + a.issues + '</td></tr>';
+    }).join('');
+
+  // --- Observation log (newest first) ---
+  $('count').textContent = rs.length + ' observations';
+  $('log').innerHTML = rs.length
+    ? [...rs].sort((a, b) => b.date.localeCompare(a.date)).map(r =>
+        '<tr><td>' + esc(r.date) + '</td>' +
+        '<td>' + esc(r.product) + '<br><small>' + esc(r.mode) + '</small></td>' +
+        '<td><strong>' + esc(r.topic) + '</strong><br><small>' +
+          esc(r.prompt.slice(0, 100)) + (r.prompt.length > 100 ? '\u2026' : '') + '</small></td>' +
+        '<td>' + esc(r.language) + '</td>' +
+        '<td><button data-view="' + esc(r.id) + '">View</button></td></tr>'
+      ).join('')
+    : '<tr><td colspan="5" class="empty">No observations in this selection. Record a search or adjust the filters.</td></tr>';
+
+  renderChecks();
+}
+
+/**
+ * Renders the strategy checklist with per-item completion state
+ * and a progress pill showing total completed.
+ */
+function renderChecks() {
+  $('progress').textContent = state.checks.length + ' / ' + TASKS.length + ' complete';
+  $('checklist').innerHTML = TASKS.map(([p, t, d], i) =>
+    '<div class="check">' +
+    '<input type="checkbox" id="task' + i + '" data-task="' + i + '" ' +
+      (state.checks.includes(i) ? 'checked' : '') + '>' +
+    '<div><label for="task' + i + '"><span class="pill ' + p.toLowerCase() + '">' +
+      p + ' · ' + ({ P0: 'First', P1: 'Next', P2: 'Experiment' }[p]) +
+      '</span> ' + t + '</label><p>' + d + '</p></div>' +
+    '</div>'
+  ).join('');
+}
+
+/* ---------------------------------------------------------------------------
+ * Event handlers
+ * ------------------------------------------------------------------------- */
+
+// --- Checklist: toggle task completion ---
+$('checklist').addEventListener('change', e => {
+  const i = Number(e.target.dataset.task);
+  state.checks = e.target.checked
+    ? [...new Set([...state.checks, i])]
+    : state.checks.filter(x => x !== i);
+  save();
+  renderChecks();
+});
+
+// --- Prompt bank: render entries ---
+$('prompts').innerHTML = BANK.map(([t, k, p], i) =>
+  '<div class="prompt"><div class="row"><strong>' + t +
+    ' <span class="pill">' + k + '</span></strong>' +
+    '<div class="actions">' +
+    '<button data-copy="' + i + '">Copy prompt</button>' +
+    '<button data-record="' + i + '">Record result</button>' +
+    '</div></div><p>' + p + '</p></div>'
+).join('');
+
+// --- Prompt bank: copy to clipboard or open editor ---
+$('prompts').addEventListener('click', async e => {
+  // "Record result" opens the editor pre-filled with the prompt.
+  if (e.target.dataset.record !== undefined)
+    openEditor(null, BANK[Number(e.target.dataset.record)]);
+
+  // "Copy prompt" writes to clipboard; falls back to the editor form
+  // if the Clipboard API is unavailable (e.g. non-secure context).
+  if (e.target.dataset.copy !== undefined) {
+    const p = BANK[Number(e.target.dataset.copy)][2];
+    try {
+      await navigator.clipboard.writeText(p);
+      notify('Prompt copied.');
+    } catch {
+      openEditor(null, BANK[Number(e.target.dataset.copy)]);
+      f.elements.prompt.focus();
+      f.elements.prompt.select();
+      notify('Select and copy the prompt from the form.');
+    }
+  }
+});
+
+/**
+ * Opens the observation editor dialog, optionally pre-filled
+ * with an existing record to edit or a prompt-bank entry.
+ * @param {object|null} r - Existing record to edit, or null for new.
+ * @param {Array|null} b - Prompt-bank entry [topic, kind, prompt], or null.
+ */
+function openEditor(r = null, b = null) {
+  editId = r ? r.id : null;
+  f.reset();
+  $('formerror').textContent = '';
+  f.elements.date.value = new Date().toISOString().slice(0, 10);
+
+  // Pre-fill from a prompt-bank entry.
+  if (b) {
+    f.elements.topic.value = b[0];
+    f.elements.prompt.value = b[2];
+  }
+
+  // Pre-fill from an existing record (edit mode).
+  if (r) {
+    ['date', 'product', 'topic', 'language', 'model', 'mode', 'prompt', 'answer', 'notes']
+      .forEach(k => f.elements[k].value = r[k]);
+    ENT.forEach((e, i) => {
+      f.elements['status' + i].value = r.ratings[e].status;
+      f.elements['accuracy' + i].value = r.ratings[e].accuracy;
+    });
+  }
+
+  $('editor').showModal();
+}
+
+// --- Editor dialog: open and close ---
+$('add').onclick = () => openEditor();
+$('close').onclick = () => $('editor').close();
+$('viewclose').onclick = () => $('viewer').close();
+
+// --- Form submit: create or update an observation ---
+f.onsubmit = e => {
+  e.preventDefault();
+
+  // Build the observation object from form fields.
+  const r = {
+    id: editId || 'r-' + Date.now() + '-' + Math.random().toString(36).slice(2),
+    ratings: {}
+  };
+  ['date', 'product', 'topic', 'language', 'model', 'mode', 'prompt', 'answer', 'notes']
+    .forEach(k => r[k] = f.elements[k].value.trim());
+
+  // Build per-institution ratings.
+  // When status is "na" (not assessed), accuracy is forced to "unknown".
+  ENT.forEach((en, i) => {
+    r.ratings[en] = {
+      status: f.elements['status' + i].value,
+      accuracy: f.elements['status' + i].value === 'na'
+        ? 'unknown'
+        : f.elements['accuracy' + i].value
+    };
+  });
+
+  // Validate: require prompt, answer, and language.
+  if (!r.prompt || !r.answer || !r.language) {
+    $('formerror').textContent = 'Enter a prompt, answer, and language.';
+    return;
+  }
+  // Validate: at least one institution must be assessed.
+  if (Object.values(r.ratings).every(a => a.status === 'na')) {
+    $('formerror').textContent = 'Assess at least one institution.';
+    return;
+  }
+
+  // Persist: update existing record or add a new one.
+  if (editId)
+    state.records = state.records.map(x => x.id === editId ? r : x);
+  else
+    state.records.push(r);
+
+  const ok = save();
+  $('dataset').value = 'live';
+  ['engine', 'topic', 'from', 'to'].forEach(k => $(k).value = '');
+  $('editor').close();
+  render();
+  if (ok) notify('Observation saved.');
+};
+
+// --- Observation log: click "View" to inspect details ---
+$('log').onclick = e => {
+  if (!e.target.dataset.view) return;
+  const r = records().find(r => r.id === e.target.dataset.view);
+  if (!r) return;
+  const sample = $('dataset').value === 'demo';
+
+  // Render observation details into the viewer dialog.
+  $('detail').innerHTML =
+    '<p class="muted">' + esc(r.date + ' · ' + r.product + ' · ' + r.mode + ' · ' + r.language) + '</p>' +
+    '<p><strong>Model:</strong> ' + esc(r.model || 'Not recorded') + '</p>' +
+    '<h3>Prompt</h3><p style="white-space:pre-wrap">' + esc(r.prompt) + '</p>' +
+    '<h3>Answer / excerpt</h3><p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(r.answer) + '</p>' +
+    '<h3>Assessment</h3>' + ENT.map(en =>
+      '<p>' + en + ': <strong>' + esc(r.ratings[en].status === 'na' ? 'Not assessed' : r.ratings[en].status) +
+      '</strong> · ' + esc(r.ratings[en].accuracy) + '</p>'
+    ).join('') +
+    '<h3>Sources &amp; notes</h3><p style="white-space:pre-wrap;overflow-wrap:anywhere">' + esc(r.notes || 'None recorded') + '</p>' +
+    (sample
+      ? '<p class="pill">Fictional sample · Read only</p>'
+      : '<div class="actions"><button id="editrecord">Edit observation</button>' +
+        '<button id="deleterecord">Delete observation</button></div>');
+
+  // Wire up edit and delete buttons (only for user data, not sample).
+  if (!sample) {
+    $('editrecord').onclick = () => {
+      $('viewer').close();
+      openEditor(r);
+    };
+    $('deleterecord').onclick = () => {
+      if (confirm('Delete this observation? Export a backup first if needed.')) {
+        state.records = state.records.filter(x => x.id !== r.id);
+        save();
+        $('viewer').close();
+        render();
+      }
+    };
+  }
+
+  $('viewer').showModal();
+};
+
+// --- Filter changes: re-render and warn on invalid date range ---
+['dataset', 'engine', 'topic', 'from', 'to'].forEach(k =>
+  $(k).addEventListener('change', () => {
+    if ($('from').value && $('to').value && $('from').value > $('to').value)
+      notify('The start date is after the end date. Adjust the date range.');
+    render();
+  })
+);
+
+// --- Export: download state as JSON (sample data excluded) ---
+$('export').onclick = () => {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'swiss-ai-observations-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  notify('Exported your observations and checklist; sample data excluded.');
+};
+
+// --- Import: load state from a JSON file (with size limit & validation) ---
+$('import').onclick = () => $('file').click();
+
+$('file').onchange = async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    if (file.size > 20 * 1024 * 1024)
+      throw Error('File exceeds 20 MB.');
+    const x = JSON.parse(await file.text());
+    if (!valid(x))
+      throw Error('Invalid backup format. Use a JSON export from this dashboard.');
+    if (confirm('Replace your ' + state.records.length + ' observations and checklist with this backup (' + x.records.length + ' observations)?')) {
+      state = { version: 1, records: x.records, checks: [...new Set(x.checks)] };
+      const ok = save();
+      $('dataset').value = 'live';
+      ['engine', 'topic', 'from', 'to'].forEach(k => $(k).value = '');
+      render();
+      if (ok) notify('Backup imported.');
+    }
+  } catch (err) {
+    notify('Import failed: ' + err.message);
+  } finally {
+    e.target.value = '';
+  }
+};
+
+/* ---------------------------------------------------------------------------
+ * Initialisation
+ * ------------------------------------------------------------------------- */
+
+// If the user already has saved observations, default to "My observations".
+if (state.records.length) $('dataset').value = 'live';
+
+// Render the initial state of the dashboard.
+render();
+</script>
+</body>
+</html>

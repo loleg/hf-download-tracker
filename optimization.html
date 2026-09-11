@@ -22,16 +22,25 @@
   <meta name="author" content="Swiss AI Initiative">
   <meta name="license" content="Apache-2.0">
   <meta name="keywords" content="Swiss AI, AI search, visibility, observatory, open source, EPFL, ETH, CSCS, SNAI">
-  <title>Swiss AI · Search Observatory</title>
+  <title>Swiss AI Observatory — Optimization</title>
+  <link rel="icon" type="image/jpeg" href="logo.webp">
 
-  <!-- Open-source font: Inter (SIL Open Font License 1.1).
-       Degrades gracefully to system-ui sans-serif if the CDN is unreachable. -->
+  <!-- Google Fonts — Inter (body/headlines) and Geist Mono (technical) -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400..700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;900&family=Geist+Mono:wght@400;700&display=swap" rel="stylesheet">
 
   <!-- Machine-readable license reference -->
   <link rel="license" href="https://www.apache.org/licenses/LICENSE-2.0">
+
+  <!-- Design System Stylesheets -->
+  <link rel="stylesheet" href="design-system/src/styles/tokens.css">
+  <link rel="stylesheet" href="design-system/src/styles/reset.css">
+  <link rel="stylesheet" href="design-system/src/styles/base.css">
+  <link rel="stylesheet" href="design-system/src/styles/typography.css">
+  <link rel="stylesheet" href="design-system/src/styles/layout.css">
+  <link rel="stylesheet" href="design-system/src/styles/components.css">
+  <link rel="stylesheet" href="design-system/src/styles/utilities.css">
 
   <style>
     /* ====================================================================
@@ -98,7 +107,6 @@
       background: #102b3d;
       color: white;
       padding: 25px max(24px, calc((100vw - 1280px) / 2));
-      border-top: 5px solid #ee343e;
     }
     .brand {
       font-size: 14px;
@@ -371,18 +379,32 @@
 </head>
 <body>
 
-<!-- ==========================================================================
-     Page header
-     ========================================================================== -->
-<header>
-  <div class="brand">
-      <img src="huggingface-mouse.jpeg" alt="Hugging Face mouse">
+<!-- Skip Link — first focusable element -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="container">
+    <div class="header-content">
+      <a class="logo" href="index.html" aria-label="Swiss AI Observatory home">
+        <img src="logo.webp" alt="" height="36" style="height: 36px; width: auto; margin-right: 12px; border-radius: 4px;">
+        <span class="logo-text" style="font-size: 18px; letter-spacing: 0.12em;">Swiss AI Observatory</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="optimization.html" aria-current="page">Optimization</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="guidelines.html">Guidelines</a></li>
+
+        </ul>
+      </nav>
+    </div>
   </div>
-  <h1>Swiss AI Observatory</h1>
-  <div class="sub">swiss-ai.org</div>
 </header>
 
-<main>
+<main id="main-content">
+  <h1 class="visually-hidden">Swiss AI Observatory — Optimization</h1>
   <!-- ======================================================================
        Overview row: title + action buttons
        ====================================================================== -->
@@ -561,7 +583,7 @@
     </details>
   </section>
 
-  <footer>Independent planning prototype · Open source (Apache 2.0) · Not an official institutional dashboard · No automated searches or external requests</footer>
+  <footer> Open source (Apache 2.0) · Not an official institutional dashboard · No automated searches or external requests</footer>
 </main>
 
 <!-- ==========================================================================
@@ -636,6 +658,32 @@
 
 <!-- Toast notification element -->
 <div id="notice" role="status" hidden></div>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-grid">
+      <div class="site-brand">
+        <p class="footer-tagline">Swiss AI Observatory — tracking AI search visibility and community engagement.</p>
+      </div>
+      <nav class="footer-nav" aria-label="Pages">
+        <h4 class="footer-nav-heading">Pages</h4>
+        <ul class="bare-list">
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="optimization.html">Optimization</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="guidelines.html">Guidelines</a></li>
+
+        </ul>
+      </nav>
+    </div>
+    <div class="footer-bottom">
+      <p class="footer-legal">
+        <span>&copy; 2026 Swiss AI Observatory · Apache-2.0 · Independent planning prototype · No automated searches or external requests</span>
+      </p>
+    </div>
+  </div>
+</footer>
 
 <script>
 'use strict';

@@ -1,0 +1,178 @@
+<!doctype html>
+<!--
+  Swiss AI Search Observatory — Dashboard
+  =======================================
+  A single-file, dependency-free web application for tracking how
+  AI search products represent Swiss AI research institutions.
+
+  Licensed under the Apache License, Version 2.0.
+  Font: Inter (SIL Open Font License 1.1) via Google Fonts, with graceful
+  fallback to system-ui sans-serif when offline.
+
+  No API keys, build step, or JavaScript libraries are required.
+  Upload this file as index.html to any static server or open it directly
+  in a browser. All user data stays in localStorage; nothing is sent
+  externally.
+-->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="A manual AI search visibility tracker for the Swiss AI research ecosystem. Open source under Apache 2.0.">
+  <meta name="author" content="Swiss AI Initiative">
+  <meta name="license" content="Apache-2.0">
+  <meta name="keywords" content="Swiss AI, AI search, visibility, observatory, open source, EPFL, ETH, CSCS, SNAI">
+  <title>Swiss AI Observatory — Optimization</title>
+  <link rel="icon" type="image/jpeg" href="logo.webp">
+
+  <!-- Google Fonts — Inter (body/headlines) and Geist Mono (technical) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;900&family=Geist+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Machine-readable license reference -->
+  <link rel="license" href="https://www.apache.org/licenses/LICENSE-2.0">
+
+  <!-- Design System Stylesheets -->
+  <link rel="stylesheet" href="design-system/src/styles/tokens.css">
+  <link rel="stylesheet" href="design-system/src/styles/reset.css">
+  <link rel="stylesheet" href="design-system/src/styles/base.css">
+  <link rel="stylesheet" href="design-system/src/styles/typography.css">
+  <link rel="stylesheet" href="design-system/src/styles/layout.css">
+  <link rel="stylesheet" href="design-system/src/styles/components.css">
+  <link rel="stylesheet" href="design-system/src/styles/utilities.css">
+  <style>
+  section li { list-style: bullet }
+  hr { margin: 2em 0em; }
+  strong { font-weight: 700; }
+  </style>
+</head>
+<body>
+
+<!-- Skip Link — first focusable element -->
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- Header -->
+<header class="site-header">
+  <div class="container">
+    <div class="header-content">
+      <a class="logo" href="index.html" aria-label="Swiss AI Observatory home">
+        <img src="logo.webp" alt="" height="36" style="height: 36px; width: auto; margin-right: 12px; border-radius: 4px;">
+        <span class="logo-text" style="font-size: 18px; letter-spacing: 0.12em;">Swiss AI Observatory</span>
+      </a>
+      <nav class="site-nav" aria-label="Main">
+        <ul>
+          <li><a href="index.html">Overview</a></li>
+          <li><a href="optimization.html" aria-current="page">Optimization</a></li>
+          <li><a href="monitoring.html">Monitoring</a></li>
+          <li><a href="guidelines.html">Guidelines</a></li>
+
+        </ul>
+      </nav>
+    </div>
+  </div>
+</header>
+<section class="section" aria-labelledby="colors-heading">
+    <div class="container">
+  <h1>Technical foundations for GEO</h1>
+
+  <p>When search engines can reliably retrieve a page and read its content (including structured titles, author, dates, links, and canonical URLs), retrieval‑based AI models (e.g., OpenAI's ChatGPT, Anthropic's Claude, home‑grown models like Apertus) can surface that work more often, reducing the risk that pages appear only in training datasets without any real‑time visibility. Provider‑specific controls (e.g., block‑level robots.txt or privacy‑controlled PDFs) are preserved and documented so that institutional policy never becomes an obstacle; meanwhile, optional AI‑friendly files (<code>llms.txt</code>) give a lightweight way for researchers to invite AI services to look for evidence while keeping core compliance unchanged.</p>
+  <hr>
+  <div class="table-wrapper"><table><thead><tr><th>Check</th><th>How to verify</th><th>Minimal fix</th><th>Owner</th><th>Priority</th></tr></thead><tbody><tr><td>Search‑eligible pages are discoverable by search‑engine crawlers</td><td>Review the robots.txt file and submit a URL‑preview to Google Search Console; request any “blocked” pages.</td><td>Update blocked URLs to “Allow” if they are intended for public discovery; log the changed URL and timestamp.</td><td>Web Team</td><td><strong>P0</strong></td></tr><tr><td>Snippet controls and formatting settings are set for key landing pages</td><td>Inspect each site’s Structured Data Testing tool or Google Rich Results Test; compare with correct schema definitions.</td><td>Add missing <code>article</code>, <code>Person</code>, <code>Organization</code> markup where updated; correct broken schema fields.</td><td>Editor</td><td>P1</td></tr><tr><td>Pages mark training queries from user request vs model fetch</td><td>Consult the AI provider’s policy documents (e.g., OpenAI, Anthropic, local models); list any non‑default settings.</td><td>Leave settings unchanged unless a specific service explicitly prohibits crawling; log the decision in a short “bot‑policy.txt” file.</td><td>System Owner</td><td>P2</td></tr><tr><td>Core textual content is not blocked by authentication or non‑rendered formats</td><td>Perform headless fetch (<code>curl</code>/<code>wget</code>) to test status codes; check PDFs for text‑extractions (<code>pdftotext</code>).</td><td>If content is authentication‑protected, request a public cached version or fallback plain‑text summary; add a “plain‑text‑summary.html” as canonical.</td><td>Web Team</td><td>P1</td></tr><tr><td>Canonical URLs, redirects, and sitemap links are consistent across partner sites</td><td>Run a Sitemap Validator and compare canonical URLs across institutions; verify 301/302 redirects point to current versions.</td><td>Centralise duplicates in a small “shared‑canonical.md” file; point existing pages to the consolidated link.</td><td>Editor</td><td>P1</td></tr><tr><td>Organisation/Person/Article structured‑data is semantically accurate</td><td>Use Google’s Structured Data Testing tool; cross‑reference content with model cards and publications.</td><td>Add missing <code>name</code>, <code>url</code>, <code>description</code> fields; ensure every “Person” entry matches the actual author page.</td><td>Editor</td><td>P1</td></tr><tr><td>“llms.txt” or AI‑specific discovery files are present where useful</td><td>Search the root directory for <code>.llms.txt</code> (or peer‑specific equivalents); verify compliance with tested evidence.</td><td>Optionally host a minimal <code>llms.txt</code> following documented best practice; note it is <strong>optional</strong>; no legal requirement to create if nonexistent.</td><td>Web Team</td><td>P2</td></tr></tbody></table></div>
+  <hr/>
+  <h2>Distribution and measurement for AI visibility</h2>
+  <p>Existing researcher posts, partner‑site announcements, press releases, conference abstracts, and independent coverage already feed robust discovery streams. The simplest lift comes from linking directly back to the maintained evidence page (e.g., the canonical model card, the final paper PDF, or the evaluation code repository) whenever a new overview appears. No new social‑media cadence, no new brand‑positioning push, and no external marketing budget is required—just a habit of inserting a one‑sentence annotation: “Full details → https://…”.</p>
+  <ol>
+  <li>
+  <p><strong>Core prompts (6‑10 items)</strong> – Open‑source foundation models, trusted reasoning services, peer‑reviewed alpine research on AI for science, CSCS infrastructure documentation, joint‑initiative news, and queries framed both branded and unbranded.</p>
+  </li>
+  <li>
+  <p><strong>Execution estimate</strong> – 5‑minute copy‑paste effort per prompt run; totals ~20‑40 minutes monthly. Run these prompts in a notepad; record the exact interface (Web UI vs GPT‑API, language setting).</p>
+  </li>
+  <li>
+  <p><strong>Observation data</strong> – Date, product name, model (if displayed), interface type, language, verbatim prompt, response excerpt (or plain text version of model reply), and citation URL (or “not‑found”).</p>
+  </li>
+  <li>
+  <p><strong>Assessment flags</strong> – Cited via institution‑owned source, mentioned without citation, omitted, or not assessed. A “not‑reviewed accuracy” wording is attached. Calculate citation rate = cited assessments ÷ assessed pairs; representation = cited + mentioned assessments ÷ all assessed pairs; issue rate = inaccurate‑/misattribution assessments ÷ accuracy‑reviewed assessments.</p>
+  </li>
+  <li>
+  <p><strong>Caveats</strong> – Citation/mention percentages are a snapshot only; they are not “share‑of‑voice,” cut‑off calls, or industry benchmarks. Android app referrers, API‑usage, and model‑card views give complementary but incomplete signals.</p>
+  </li>
+  </ol>
+  <p><strong>One‑page pilot sample</strong></p>
+  <div class="table-wrapper"><table><thead><tr><th>Date</th><th>Model/Interface</th><th>Prompt</th><th>Cited</th><th>Represented</th><th>Issues</th></tr></thead><tbody><tr><td>2024‑06‑12</td><td>GPT‑4‑Turbo (web)</td><td>“Describe the core role of the Alps super‑computer in SNAI’s AI initiatives”</td><td>✓</td><td>✓</td><td>—</td></tr><tr><td>2024‑06‑15</td><td>Claude‑3.5‑Sonnet‑API</td><td>Same prompt in english</td><td>—</td><td>—</td><td>N/A</td></tr></tbody></table></div>
+  <p><strong>Monthly checklist</strong></p>
+  <ul>
+  <li>Re‑run prompts from month‑ago list.</li>
+  <li>Flag any page newly blocked or redirected.</li>
+  <li>Correct canonical links that diverged.</li>
+  </ul>
+  <p><strong>What triggers action</strong></p>
+  <ul>
+  <li>Repeated omission on genuinely relevant queries.</li>
+  <li>Persistent misattribution of work to another team/institution.</li>
+  <li>Outdated date in citation URLs that no longer matches the current paper version.</li>
+  <li>Confirmed access failure (status 403/404) blocking a potentially valuable source.</li>
+  <li>AI product behavior change that appears unrelated to content update and yet alters the answer set.</li>
+  </ul>
+  <hr>
+
+  <h2>Editorial Guidelines</h2>
+
+  <p>
+  Concise, scannable answers sit near the top of every relevant page; headings and bullet lists appear where they clarify data or workflows; quantitative statements give date, context, and source; expert quotations are invoked only when they add interpretive value; every primary artifact (paper, model card, code, evaluation suite) is linked directly from the page with a one‑line caption that matches that evidence. Scientific nuance is preserved; no extra length, mandated FAQs, or statistical guarantees are prescribed.</p>
+  <p>
+  Pages plainly state the responsible institution and the actual authors/contributors; joint‑project roles are listed once and consistently; duplicate initiative pages are left separate unless the institutions jointly agree on consolidation; structured‑data tags are added only when they map directly to visible content; no blanket “FAQPage” markup is imposed; the “llms.txt” or similar AI‑specific files are optional experiments, not prerequisites; policy decisions about additional services are logged against existing workflow ownership.</p>
+  <hr>
+  <h2>Five immediate actions</h2>
+  <ol>
+  <li>
+  <p><strong>Update robots.txt &amp; status</strong> – Web Team to audit current robots.txt for blocking search engines; revise any blocking rules; note every change with comment “AI discoverability review 2024‑06”.<br>
+  <em>Definition of done:</em> A consolidated note file created; any blocked URLs changed to ‘Allow’ or explicitly documented as blocking with rationale.</p>
+  </li>
+  <li>
+  <p><strong>Add missing structured data on model‑card pages</strong> – Editor to tag Organisation, Person, ScholarlyArticle schema on EPFL, ETH, CSCS, and SNAI model‑card URLs; ensure each <code>Person.url</code> points to the author page.<br>
+  <em>Definition of done:</em> Each model‑card page passes the Google Structured Data Test without new errors; reference to the updated schema version stored in doc/model‑schema.json.</p>
+  </li>
+  <li>
+  <p><strong>Publish a canonicalisation note</strong> – Editor to post a short notice on each partner site that lists the single canonical URL for the initiative they represent (e.g., <a href="https://scien.su/initiative">https://scien.su/initiative</a> in the Alps/CSCS context).<br>
+  <em>Definition of done:</em> Notice added to footer of all relevant pages with link to canonical; no further consolidation required.</p>
+  </li>
+  <li>
+  <p><strong>Create a monthly dataset record</strong> – Web Team to build a markdown snapshot (<code>AI_discovery_monthly.md</code>) from the routine described in focus area 7; include prompts, dates, citation indicators, AI product names and language, and timestamp of last content update.<br>
+  <em>Definition of done:</em> One CSV or markdown row per measurement instance placed in the shared repo; row added within 24 hours after measurement.</p>
+  </li>
+  <li>
+  <p><strong>Add a note to the “llms.txt” optional file</strong> – Web Team to add a one‑line entry (e.g., <code>SwissAIInitiative: https://scien.su/docs</code>) to the optional public file at <a href="https://example.com/.llms.txt">https://example.com/.llms.txt</a> (or partner‑specific equivalent); label it “experiment: optional discovery invite”.<br>
+  <em>Definition of done:</em> One line placed and versioned; no changes to existing robots.txt required.</p>
+  </li>
+  </ol>
+  <hr>
+  <h3>References</h3>
+  <ul>
+  <li>Google Search documentation: <a href="https://developers.google.com/search/docs/appearance/ai%E2%80%91features">https://developers.google.com/search/docs/appearance/ai‑features</a></li>
+  <li>Official crawler and search‑engine policy docs (OpenAI, Anthropic, colleagues) – locate current policy pages at organizations’ developer portals.</li>
+  <li>GEO‑focused research (where evidence required): <a href="https://arxiv.org/html/2311.09735v3">https://arxiv.org/html/2311.09735v3</a></li>
+  </ul>
+  <hr>
+  <p>
+      <img src="huggingface-mouse.jpeg" width="300" style="border-radius: 4px;">
+      <i>No lab mice or frontier models were used<br>
+          in the development of this website.</i>
+  </p>
+</div>
+</section>
+
+<!-- Footer -->
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-bottom">
+      <p class="footer-legal">
+        <span>&copy; 2026 Swiss AI Observatory · Apache-2.0</span>
+      </p>
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>

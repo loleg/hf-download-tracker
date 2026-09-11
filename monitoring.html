@@ -3,25 +3,24 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Open-Source LLM Community Dashboard</title>
-  <style>
-    :root {
-      --bg: #0b0f17; --panel: #111827; --muted: #94a3b8; --text: #e5e7eb;
-      --accent: #60a5fa; --good: #34d399; --warn: #fbbf24; --bad: #f87171;
-      --border: rgba(148,163,184,.18);
-      --chip: rgba(96,165,250,.15);
-      --shadow: 0 10px 25px rgba(0,0,0,.25);
-      --mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-      --sans: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-    }
-    * { box-sizing: border-box; }
-    body { margin: 0; font-family: var(--sans); background: radial-gradient(1200px 800px at 20% -10%, rgba(96,165,250,.18), transparent 55%), var(--bg); color: var(--text); }
-    a { color: var(--accent); text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    header { padding: 22px 18px 10px; max-width: 1200px; margin: 0 auto; }
-    h1 { margin: 0 0 6px; font-size: 20px; font-weight: 700; }
-    .sub { color: var(--muted); font-size: 13px; }
+  <title>Swiss AI Observatory — Monitoring</title>
+  <link rel="icon" type="image/jpeg" href="logo.webp">
 
+  <!-- Google Fonts — Inter (body/headlines) and Geist Mono (technical) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;900&family=Geist+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+  <!-- Design System Stylesheets -->
+  <link rel="stylesheet" href="design-system/src/styles/tokens.css">
+  <link rel="stylesheet" href="design-system/src/styles/reset.css">
+  <link rel="stylesheet" href="design-system/src/styles/base.css">
+  <link rel="stylesheet" href="design-system/src/styles/typography.css">
+  <link rel="stylesheet" href="design-system/src/styles/layout.css">
+  <link rel="stylesheet" href="design-system/src/styles/components.css">
+  <link rel="stylesheet" href="design-system/src/styles/utilities.css">
+
+  <style>
     .grid {
       max-width: 1200px; margin: 0 auto; padding: 14px 18px 30px;
       display: grid; grid-template-columns: 360px 1fr; gap: 14px;
@@ -32,46 +31,26 @@
       background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
       border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow);
     }
-    .card h2 { margin: 0; font-size: 13px; letter-spacing: .02em; color: rgba(229,231,235,.9); }
+    .card h2 { margin: 0; font-size: 13px; letter-spacing: .02em; }
     .card .hd { padding: 12px 12px 10px; border-bottom: 1px solid var(--border); display:flex; align-items:center; justify-content:space-between; gap: 10px; }
     .card .bd { padding: 12px; }
 
-    input[type="text"], input[type="number"], select, textarea {
-      width: 100%; padding: 10px 10px; border-radius: 10px;
-      background: rgba(17,24,39,.55); color: var(--text);
-      border: 1px solid rgba(148,163,184,.24);
-      outline: none;
-    }
-    textarea { min-height: 92px; font-family: var(--mono); font-size: 12px; }
-    input:focus, select:focus, textarea:focus { border-color: rgba(96,165,250,.65); box-shadow: 0 0 0 3px rgba(96,165,250,.15); }
-
     .row { display:flex; gap: 10px; align-items:center; }
     .row > * { flex: 1; }
-    .btn {
-      cursor: pointer; user-select: none;
-      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-      padding: 10px 10px; border-radius: 10px;
-      border: 1px solid rgba(148,163,184,.24);
-      background: rgba(96,165,250,.15);
-      color: var(--text);
-      font-weight: 600; font-size: 13px;
-    }
-    .btn:hover { background: rgba(96,165,250,.22); }
-    .btn.secondary { background: rgba(148,163,184,.10); }
 
     .chips { display:flex; flex-wrap: wrap; gap: 6px; }
-    .chip { padding: 6px 8px; border-radius: 999px; border: 1px solid rgba(148,163,184,.22); background: rgba(148,163,184,.08); font-size: 12px; color: rgba(229,231,235,.88); cursor:pointer; }
-    .chip.on { background: var(--chip); border-color: rgba(96,165,250,.45); }
+    .chip { padding: 6px 8px; border-radius: 999px; border: 1px solid rgba(148,163,184,.22); background: rgba(148,163,184,.08); font-size: 12px; cursor:pointer; }
+    .chip.on {  border-color: rgba(96,165,250,.45); }
 
     .kpis { display:grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
-    .kpi { padding: 10px; border-radius: 12px; background: rgba(17,24,39,.55); border: 1px solid rgba(148,163,184,.18); }
+    .kpi { padding: 10px; border-radius: 12px; border: 1px solid rgba(148,163,184,.18); }
     .kpi .v { font-size: 18px; font-weight: 800; }
-    .kpi .l { font-size: 12px; color: var(--muted); }
+    .kpi .l { font-size: 12px; }
 
     .items { display:flex; flex-direction: column; gap: 10px; }
-    .item { padding: 12px; border-radius: 14px; background: rgba(17,24,39,.55); border: 1px solid rgba(148,163,184,.18); }
+    .item { padding: 12px; border-radius: 14px; border: 1px solid rgba(148,163,184,.18); }
     .item .t { font-weight: 750; font-size: 14px; margin-bottom: 6px; }
-    .meta { display:flex; flex-wrap: wrap; gap: 8px; color: var(--muted); font-size: 12px; }
+    .meta { display:flex; flex-wrap: wrap; gap: 8px; font-size: 12px; }
     .tag { padding: 2px 7px; border-radius: 999px; border: 1px solid rgba(148,163,184,.22); }
     .muted { color: var(--muted); }
     .small { font-size: 12px; }
@@ -87,12 +66,33 @@
   </style>
 </head>
 <body>
-  <header>
-    <h1>Open-Source LLM Community Dashboard</h1>
-    <div class="sub">A fast, pragmatic “what’s happening now?” view across open-source LLMs, Public AI, and major ML venues.</div>
+  <!-- Skip Link — first focusable element -->
+  <a href="#main-content" class="skip-link">Skip to main content</a>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="container">
+      <div class="header-content">
+        <a class="logo" href="index.html" aria-label="Swiss AI Observatory home">
+          <img src="logo.webp" alt="" height="36" style="height: 36px; width: auto; margin-right: 12px; border-radius: 4px;">
+          <span class="logo-text" style="font-size: 18px; letter-spacing: 0.12em;">Swiss AI Observatory</span>
+        </a>
+        <nav class="site-nav" aria-label="Main">
+          <ul>
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="optimization.html">Optimization</a></li>
+            <li><a href="monitoring.html" aria-current="page">Monitoring</a></li>
+            <li><a href="guidelines.html">Guidelines</a></li>
+
+          </ul>
+        </nav>
+      </div>
+    </div>
   </header>
 
-  <div class="grid">
+  <main id="main-content">
+    <h1 class="visually-hidden">Swiss AI Observatory — Monitoring</h1>
+    <div class="grid">
     <section class="card">
       <div class="hd"><h2>Controls</h2><span class="small muted" id="lastUpdated">—</span></div>
       <div class="bd">
@@ -179,6 +179,7 @@
       </div>
     </section>
   </div>
+  </main>
 
 <script>
   // -------------------- Configuration --------------------
@@ -540,5 +541,29 @@
   // First load (don’t auto-fetch to avoid surprising network calls)
   setStatus("Idle. Click Refresh.");
 </script>
+
+  <!-- Footer -->
+  <footer class="site-footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="site-brand">
+          <p class="footer-tagline">Swiss AI Observatory — tracking AI search visibility and community engagement.</p>
+        </div>
+        <nav class="footer-nav" aria-label="Pages">
+          <h4 class="footer-nav-heading">Pages</h4>
+          <ul class="bare-list">
+            <li><a href="index.html">Overview</a></li>
+            <li><a href="optimization.html">Optimization</a></li>
+            <li><a href="monitoring.html">Monitoring</a></li>
+          </ul>
+        </nav>
+      </div>
+      <div class="footer-bottom">
+        <p class="footer-legal">
+          <span>&copy; 2026 Swiss AI Observatory · Apache-2.0</span>
+        </p>
+      </div>
+    </div>
+  </footer>
 </body>
 </html>

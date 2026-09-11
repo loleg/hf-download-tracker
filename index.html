@@ -2,12 +2,66 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="icon" type="image/jpeg" href="logo.webp" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Hugging Face Tracker - LLM Model Downloads</title>
+    <meta name="description" content="Swiss AI Observatory — tracking AI search visibility and community engagement." />
+    <meta name="theme-color" content="#EAF5F8" />
+    <title>Swiss AI Observatory</title>
+
+    <!-- Google Fonts — Inter (body/headlines) and Geist Mono (technical) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;600;900&family=Geist+Mono:wght@400;700&display=swap" rel="stylesheet">
+
+    <!-- Design System Stylesheets -->
+    <link rel="stylesheet" href="design-system/src/styles/tokens.css">
+    <link rel="stylesheet" href="design-system/src/styles/reset.css">
+    <link rel="stylesheet" href="design-system/src/styles/base.css">
+    <link rel="stylesheet" href="design-system/src/styles/typography.css">
+    <link rel="stylesheet" href="design-system/src/styles/layout.css">
+    <link rel="stylesheet" href="design-system/src/styles/components.css">
+    <link rel="stylesheet" href="design-system/src/styles/utilities.css">
   </head>
   <body>
-    <div id="root"></div>
+    <!-- Skip Link — first focusable element -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+
+    <!-- Header -->
+    <header class="site-header">
+      <div class="container">
+        <div class="header-content">
+          <a class="logo" href="index.html" aria-label="Swiss AI Observatory home">
+            <img src="logo.webp" alt="" height="36" style="height: 36px; width: auto; margin-right: 12px; border-radius: 4px;">
+            <span class="logo-text" style="font-size: 18px; letter-spacing: 0.12em;">Swiss AI Observatory</span>
+          </a>
+          <nav class="site-nav" aria-label="Main">
+            <ul>
+              <li><a href="index.html" aria-current="page">Overview</a></li>
+              <li><a href="optimization.html">Optimization</a></li>
+              <li><a href="monitoring.html">Monitoring</a></li>
+              <li><a href="guidelines.html">Guidelines</a></li>
+            </ul>
+          </nav>
+        </div>
+      </div>
+    </header>
+
+    <main id="main-content">
+      <h1 class="visually-hidden">Swiss AI Observatory</h1>
+      <div id="root"></div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="site-footer">
+      <div class="container">
+        <div class="footer-bottom">
+          <p class="footer-legal">
+            <span>&copy; 2026 Swiss AI Observatory · Apache-2.0</span>
+          </p>
+        </div>
+      </div>
+    </footer>
+
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

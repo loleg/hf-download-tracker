@@ -1,240 +1,205 @@
-import { modelInfo, listModels } from "@huggingface/hub";
+// Hugging Face Hub API service.
+//
+// Design principles:
+// - Plain fetch against the public REST API — no SDK wrapper, no token gate.
+//   Everything below is public data, so the dashboard works with zero config.
+// - An optional VITE_HF_TOKEN (see .env.example) is attached when present to
+//   lift rate limits, but is never required.
+// - Never throw: on failure return null and let the UI render an honest
+//   "unavailable" state. No synthetic or simulated numbers, ever.
 
-// Get the HF token from environment variables
-const getHfToken = () => {
-  return import.meta.env.VITE_HF_TOKEN || null;
-};
+import { HF_ORG } from '../config'
 
-// Get the HF API base URL
-const getHfApiUrl = () => {
-  return import.meta.env.VITE_HF_API_URL || "https://huggingface.co";
-};
+const HF_API_BASE = 'https://huggingface.co/api'
 
-// Check if token is configured
-export const isTokenConfigured = () => {
-  const token = getHfToken();
-  return !!token && token.length > 0;
-};
+const hfHeaders = () => {
+  const token = import.meta.env.VITE_HF_TOKEN
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
 
-// Fetch model information from Hugging Face
+async function requestJson(url) {
+  try {
+    const response = await fetch(url, { headers: hfHeaders() })
+    if (!response.ok) return null
+    return await response.json()
+  } catch (error) {
+    console.warn(`[huggingface] request failed: ${url}`, error)
+    return null
+  }
+}
+
+function modelUrl(modelId) {
+  return `https://huggingface.co/${modelId}`
+}
+
+/**
+ * Fetch the live stats for one model.
+ *
+ * Uses the expand[] params so a single request returns downloads (last 30
+ * days), all-time downloads, likes, timestamps, derived-works counts
+ * (childrenModelCount) and the Spaces building on the model.
+ */
 export async function fetchModelInfo(modelId) {
-  try {
-    const info = await modelInfo({
-      name: modelId,
-      hubUrl: "https://huggingface.co",
-    }, {
-      accessToken: getHfToken() ?? undefined
-    });
-    
-    return info;
-  } catch (error) {
-    console.error(`Error fetching model info for ${modelId}:`, error);
-    return null;
-  }
-}
+  const expand = [
+    'downloads',
+    'downloadsAllTime',
+    'likes',
+    'createdAt',
+    'lastModified',
+    'childrenModelCount',
+    'spaces',
+  ].map((field) => `expand[]=${field}`).join('&')
 
-// Fetch download statistics for a model
-export async function fetchModelDownloads(modelId) {
-  try {
-    const info = await modelInfo({
-      name: modelId,
-      hubUrl: "https://huggingface.co",
-    }, {
-      accessToken: getHfToken() ?? undefined
-    });
-    
-    return {
-      downloads: info.downloads || 0,
-      lastUpdated: info.lastModified || new Date().toISOString(),
-    };
-  } catch (error) {
-    console.error(`Error fetching downloads for ${modelId}:`, error);
-    return null;
-  }
-}
+  const json = await requestJson(`${HF_API_BASE}/models/${modelId}?${expand}`)
+  if (!json) return null
 
-// Fetch list of models with filters
-export async function searchModels(query, options) {
-  try {
-    const models = await listModels({
-      search: query,
-      limit: options?.limit || 10,
-      sort: options?.sort || "downloads",
-      direction: -1,
-      hubUrl: "https://huggingface.co",
-    }, {
-      accessToken: getHfToken() ?? undefined
-    });
-    
-    return [...models];
-  } catch (error) {
-    console.error(`Error searching models:`, error);
-    return [];
+  return {
+    id: json.id ?? modelId,
+    url: modelUrl(modelId),
+    downloads: json.downloads ?? 0,
+    downloadsAllTime: json.downloadsAllTime ?? 0,
+    likes: json.likes ?? 0,
+    createdAt: json.createdAt ?? null,
+    lastModified: json.lastModified ?? null,
+    childrenModelCount: {
+      finetune: json.childrenModelCount?.finetune ?? 0,
+      adapter: json.childrenModelCount?.adapter ?? 0,
+      quantized: json.childrenModelCount?.quantized ?? 0,
+      merge: json.childrenModelCount?.merge ?? 0,
+    },
+    spaces: Array.isArray(json.spaces) ? json.spaces : [],
   }
 }
 
 /**
- * Fetch discussions for a specific repository
- * @param {string} repoId - The repository ID (e.g., "swiss-ai/Apertus-8B-Instruct-2509")
- * @param {Object} options - Optional parameters
- * @param {number} options.limit - Maximum number of discussions to fetch (default: 10)
- * @returns {Promise<Array>} Array of discussion objects
+ * Fetch the open and closed discussion counts and lists for a model.
+ *
+ * `?status=open` returns { discussions, count, numClosedDiscussions } where
+ * count is the open count; `?status=closed` has the same shape with the
+ * closed count. We normalise the discussion items to camelCase and link each
+ * to its canonical discussion URL.
  */
-export async function fetchDiscussions(repoId, options = {}) {
-  const token = getHfToken();
-  const limit = options.limit || 10;
-  
-  try {
-    const url = `${getHfApiUrl()}/api/models/${repoId}/discussions?limit=${limit}&status=open&sort=trending`;
-    const response = await fetch(url, {
-      headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
-        "Content-Type": "application/json",
-      },
-    });
-    
-    if (!response.ok) {
-      if (response.status === 404) {
-        console.warn(`No discussions found for ${repoId}`);
-        return [];
-      }
-      throw new Error(`Failed to fetch discussions: ${response.status}`);
-    }
-    
-    const discussions = await response.json();
-    //console.log(discussions); 
-    // Normalize discussion data
-    return discussions.discussions.map(discussion => ({
-      id: discussion.createdAt,
-      title: discussion.title,
-      author: discussion.author?.name || discussion.author?.email || "Anonymous",
-      createdAt: discussion.createdAt,
-      updatedAt: discussion.updatedAt,
-      numComments: discussion.numComments || 0,
-      isPinned: discussion.isPinned || false,
-      isResolved: discussion.isResolved || false,
-      isUpvote: discussion.isUpvote || false,
-      url: `${getHfApiUrl()}/${repoId}/discussions/${discussion.id}`,
-      repoId: repoId,
-    }));
-  } catch (error) {
-    console.error(`Error fetching discussions for ${repoId}:`, error);
-    return [];
+function normaliseDiscussion(item, modelId) {
+  return {
+    num: item.num,
+    title: item.title,
+    createdAt: item.createdAt ?? null,
+    isPullRequest: Boolean(item.isPullRequest),
+    numComments: item.numComments ?? 0,
+    author: {
+      name: item.author?.name ?? 'Anonymous',
+      fullname: item.author?.fullname ?? null,
+    },
+    isParticipating: Boolean(item.repoOwner?.isParticipating),
+    url: `${modelUrl(modelId)}/discussions/${item.num}`,
+  }
+}
+
+export async function fetchDiscussionOverview(modelId) {
+  const open = await requestJson(`${HF_API_BASE}/models/${modelId}/discussions?status=open&limit=50`)
+  const closed = await requestJson(`${HF_API_BASE}/models/${modelId}/discussions?status=closed&limit=50`)
+  if (!open || !closed) return null
+
+  return {
+    openCount: open.count ?? open.discussions?.length ?? 0,
+    closedCount: closed.count ?? closed.discussions?.length ?? 0,
+    openDiscussions: (open.discussions ?? []).map((d) => normaliseDiscussion(d, modelId)),
+    closedDiscussions: (closed.discussions ?? []).map((d) => normaliseDiscussion(d, modelId)),
   }
 }
 
 /**
- * Fetch discussions for multiple repositories
- * @param {Array} repos - Array of repo objects with id property
- * @param {Object} options - Optional parameters
- * @param {number} options.limitPerRepo - Maximum discussions per repo (default: 5)
- * @returns {Promise<Object>} Object with repo IDs as keys and discussions as values
+ * Fetch one discussion's event timeline. The top-level author._id identifies
+ * the starter, so the first comment event from any other author gives us the
+ * first-response time.
  */
-export async function fetchDiscussionsForRepos(repos, options = {}) {
-  const limitPerRepo = options.limitPerRepo || 5;
-  const results = {};
-  
-  try {
-    // Fetch discussions for all repos in parallel
-    const promises = repos.map(async (repo) => {
-      const discussions = await fetchDiscussions(repo.id, { limit: limitPerRepo });
-      return { repoId: repo.id, discussions };
-    });
-    
-    const repoResults = await Promise.all(promises);
-    
-    // Build results object
-    repoResults.forEach(({ repoId, discussions }) => {
-      results[repoId] = discussions;
-    });
-    
-    return results;
-  } catch (error) {
-    console.error(`Error fetching discussions for repos:`, error);
-    return {};
+export async function fetchDiscussionDetail(modelId, num) {
+  const json = await requestJson(`${HF_API_BASE}/models/${modelId}/discussions/${num}`)
+  if (!json) return null
+
+  return {
+    num: json.num ?? num,
+    title: json.title ?? '',
+    createdAt: json.createdAt ?? null,
+    starterId: json.author?._id ?? null,
+    events: (json.events ?? [])
+      .filter((event) => event.createdAt && event.author?._id)
+      .map((event) => ({
+        type: event.type,
+        createdAt: event.createdAt,
+        authorId: event.author._id,
+      })),
   }
 }
 
 /**
- * Get discussion statistics for a repository
- * @param {string} repoId - The repository ID
- * @returns {Promise<Object>} Discussion statistics
+ * Compute community-health metrics for a model from public discussion data:
+ *
+ * - resolution rate (closed / total discussions)
+ * - median first-response time across recent open discussions
+ * - unanswered discussions (open, no replies yet — for PRs the description
+ *   itself counts as the first comment)
+ * - participation (distinct community members who commented)
  */
-export async function fetchDiscussionStats(repoId) {
-  try {
-    const discussions = await fetchDiscussions(repoId, { limit: 100 });
-    
-    const totalDiscussions = discussions.length;
-    const pinnedDiscussions = discussions.filter(d => d.isPinned).length;
-    const resolvedDiscussions = discussions.filter(d => d.isResolved).length;
-    const totalComments = discussions.reduce((sum, d) => sum + d.numComments, 0);
-    
-    // Get recent discussions (last 7 days)
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const recentDiscussions = discussions.filter(d => new Date(d.createdAt) > sevenDaysAgo).length;
-    
-    return {
-      repoId,
-      totalDiscussions,
-      pinnedDiscussions,
-      resolvedDiscussions,
-      unresolvedDiscussions: totalDiscussions - resolvedDiscussions,
-      totalComments,
-      recentDiscussions,
-      lastActivity: discussions[0]?.updatedAt || null,
-    };
-  } catch (error) {
-    console.error(`Error fetching discussion stats for ${repoId}:`, error);
-    return {
-      repoId,
-      totalDiscussions: 0,
-      pinnedDiscussions: 0,
-      resolvedDiscussions: 0,
-      unresolvedDiscussions: 0,
-      totalComments: 0,
-      recentDiscussions: 0,
-      lastActivity: null,
-    };
+export async function fetchCommunityHealth(modelId) {
+  const overview = await fetchDiscussionOverview(modelId)
+  if (!overview) return null
+
+  const sampled = overview.openDiscussions.slice(0, 10)
+  const details = await Promise.all(
+    sampled.map((discussion) => fetchDiscussionDetail(modelId, discussion.num))
+  )
+
+  const responseTimes = []
+  const participants = new Set()
+  details.forEach((detail) => {
+    if (!detail) return
+    detail.events.forEach((event) => {
+      if (event.type !== 'comment' || event.authorId === detail.starterId) return
+      participants.add(event.authorId)
+      const elapsed = new Date(event.createdAt) - new Date(detail.createdAt)
+      if (Number.isFinite(elapsed) && elapsed >= 0) responseTimes.push(elapsed)
+    })
+  })
+
+  responseTimes.sort((a, b) => a - b)
+  const median = responseTimes.length
+    ? responseTimes[Math.floor((responseTimes.length - 1) / 2)]
+    : null
+
+  const total = overview.openCount + overview.closedCount
+
+  return {
+    modelId,
+    openCount: overview.openCount,
+    closedCount: overview.closedCount,
+    resolutionRate: total ? overview.closedCount / total : null,
+    medianFirstResponseMs: median,
+    sampledDiscussionCount: details.filter(Boolean).length,
+    unansweredCount: overview.openDiscussions.filter(
+      (d) => (d.isPullRequest ? d.numComments <= 1 : d.numComments === 0)
+    ).length,
+    participants: participants.size,
+    needsReply: overview.openDiscussions
+      .filter((d) => (d.isPullRequest ? d.numComments <= 1 : d.numComments === 0))
+      .slice(0, 5),
+    openDiscussions: overview.openDiscussions,
   }
 }
 
 /**
- * Get aggregated discussion statistics for multiple repositories
- * @param {Array} repos - Array of repo objects with id property
- * @returns {Promise<Object>} Aggregated statistics
+ * Fetch the datasets published by the org, most downloaded first.
  */
-export async function fetchAggregateDiscussionStats(repos) {
-  try {
-    const promises = repos.map(repo => fetchDiscussionStats(repo.id));
-    const statsResults = await Promise.all(promises);
-    
-    const aggregated = statsResults.reduce((acc, stats) => ({
-      totalDiscussions: acc.totalDiscussions + stats.totalDiscussions,
-      totalComments: acc.totalComments + stats.totalComments,
-      totalPinned: acc.totalPinned + stats.pinnedDiscussions,
-      totalResolved: acc.totalResolved + stats.resolvedDiscussions,
-      totalRecent: acc.totalRecent + stats.recentDiscussions,
-      repos: [...acc.repos, stats],
-    }), {
-      totalDiscussions: 0,
-      totalComments: 0,
-      totalPinned: 0,
-      totalResolved: 0,
-      totalRecent: 0,
-      repos: [],
-    });
-    
-    return aggregated;
-  } catch (error) {
-    console.error(`Error fetching aggregate discussion stats:`, error);
-    return {
-      totalDiscussions: 0,
-      totalComments: 0,
-      totalPinned: 0,
-      totalResolved: 0,
-      totalRecent: 0,
-      repos: [],
-    };
-  }
+export async function fetchOrgDatasets() {
+  const json = await requestJson(`${HF_API_BASE}/datasets?author=${HF_ORG}&limit=100`)
+  if (!Array.isArray(json)) return null
+
+  return json
+    .map((dataset) => ({
+      id: dataset.id,
+      url: `https://huggingface.co/datasets/${dataset.id}`,
+      downloads: dataset.downloads ?? 0,
+      likes: dataset.likes ?? 0,
+    }))
+    .sort((a, b) => b.downloads - a.downloads)
 }

@@ -2,7 +2,7 @@
 
 _A fast loading, open source, data-rich dashboard where every interaction surfaces insights effortlessly._
 
-To configure, set the `VITE_HF_TOKEN` to a token that you generated on the [Hugging Face Access Tokens](https://huggingface.co/settings/tokens) page. It only needs FINEGRAINED access to read public repo info.
+The dashboard runs with **zero configuration** — everything it shows is live public data from the Hugging Face and GitHub APIs. Two **optional** tokens (set them in `.env`, see `.env.example` for the template) exist only to lift rate limits, never to gate data: `VITE_HF_TOKEN` from the [Hugging Face Access Tokens](https://huggingface.co/settings/tokens) page (fine-grained, read-public is enough) and `VITE_GITHUB_TOKEN`, a [fine-grained GitHub PAT](https://github.com/settings/personal-access-tokens) with no extra scopes, which lifts the 60 req/hour unauthenticated GitHub limit to 5,000/hour.
 
 Then install and run using:
 

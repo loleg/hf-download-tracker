@@ -7,9 +7,6 @@
 export const GITHUB_ORG = 'swiss-ai'
 export const HF_ORG = 'swiss-ai'
 
-// The model whose community (discussions, derived works) we track most closely.
-export const APERTUS_MODEL = 'swiss-ai/Apertus-8B-Instruct-2509'
-
 // GitHub repositories under the org that we surface in the Contributions panel.
 export const TRACKED_REPOS = [
   'pretrain-data',
@@ -22,21 +19,29 @@ export const TRACKED_REPOS = [
 // "fully open" (weights, training data and code) vs "open-weight" (weights
 // only). This distinction is the honest way to compare projects that release
 // different amounts of their stack.
-// TODO: confirm SEA-LION classification with the community.
 export const MODELS = [
-  { id: 'swiss-ai/Apertus-70B-Instruct-2509', name: 'Apertus 70B', openness: 'fully-open' },
-  { id: 'swiss-ai/Apertus-8B-Instruct-2509', name: 'Apertus 8B', openness: 'fully-open' },
+  { id: 'swiss-ai/Apertus-v1.5-70B', name: 'Apertus 1.5 70B', openness: 'swiss-ai' },
+  { id: 'swiss-ai/Apertus-v1.5-8B', name: 'Apertus 1.5 8B', openness: 'swiss-ai' },
+  { id: 'swiss-ai/Apertus-v1.1-4B', name: 'Apertus 1.1 4B', openness: 'swiss-ai' },
+  { id: 'swiss-ai/Apertus-70B-Instruct-2509', name: 'Apertus 70B', openness: 'swiss-ai' },
+  { id: 'swiss-ai/Apertus-8B-Instruct-2509', name: 'Apertus 8B', openness: 'swiss-ai' },
   { id: 'utter-project/EuroLLM-22B-Instruct-2512', name: 'EuroLLM 22B', openness: 'fully-open' },
-  { id: 'allenai/Olmo-3.1-32B-Instruct-SFT', name: 'Olmo 3.1 32B', openness: 'fully-open' },
-  { id: 'aisingapore/Apertus-SEA-LION-v4-8B-IT', name: 'SEA-LION 8B', openness: 'open-weight' },
+  { id: 'utter-project/EuroMoE-2.6B-A0.6B-Instruct-2512', name: 'EuroMoE 2.6B', openness: 'fully-open' },
+  { id: 'utter-project/EuroLLM1.5-9B-SFT', name: 'EuroLLM 1.5 9B', openness: 'fully-open' },
+  { id: 'allenai/Olmo-3.1-32B-Instruct', name: 'Olmo 3.1 32B', openness: 'fully-open' },
+  { id: 'allenai/Olmo-3-7B-Instruct', name: 'Olmo 3 7B', openness: 'fully-open' },
+  { id: 'aisingapore/Apertus-SEA-LION-v4-8B-IT-GGUF', name: 'Apertus-SEA-LION v4 8B', openness: 'fully-open' },
 ]
 
+// The model whose community (discussions, derived works) we track most closely.
+export const APERTUS_MODEL = MODELS[0]
+
 export const OPENNESS_LABELS = {
-  'fully-open': 'Fully open',
-  'open-weight': 'Open-weight',
+  'swiss-ai': 'Swiss AI Initiative',
+  'fully-open': 'Fully Open',
 }
 
 export const OPENNESS_DESCRIPTIONS = {
-  'fully-open': 'weights, training data and code',
-  'open-weight': 'weights only',
+  'swiss-ai': '',
+  'fully-open': '(Weights, training data and code)',
 }

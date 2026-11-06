@@ -6,6 +6,7 @@ const compactFormatter = new Intl.NumberFormat('en', {
 })
 
 export function formatCompact(value) {
+  if (value == null) return '—'
   const n = Number(value)
   if (!Number.isFinite(n)) return '—'
   return compactFormatter.format(n)

@@ -35,7 +35,7 @@ function derivedTotal(model) {
   return c.finetune + c.adapter + c.quantized + c.merge
 }
 
-export function DownloadsPanel({ models }) {
+export function DownloadsPanel({ models, selectedModelId }) {
   const [sortKey, setSortKey] = useState('downloads')
   const [sortOrder, setSortOrder] = useState('desc')
 
@@ -65,7 +65,11 @@ export function DownloadsPanel({ models }) {
       {
         label: 'Downloads (last 30 days)',
         data: sorted.map((m) => m.downloads ?? 0),
-        backgroundColor: sorted.map((_, i) => COLORS[i % COLORS.length]),
+        backgroundColor: sorted.map((m, i) => {
+          const base = COLORS[i % COLORS.length]
+          // Dim non-selected bars so the selected model stands out.
+          return m.id === selectedModelId ? base : `${base}66`
+        }),
         borderRadius: 4,
       },
     ],
@@ -88,7 +92,7 @@ export function DownloadsPanel({ models }) {
     },
   }
 
-  const groups = ['fully-open', 'open-weight']
+  const groups = ['swiss-ai', 'fully-open']
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
@@ -149,14 +153,18 @@ export function DownloadsPanel({ models }) {
                         {OPENNESS_LABELS[group]}
                       </span>
                       <span className="text-gray-400 text-xs ml-2">
-                        ({OPENNESS_DESCRIPTIONS[group]})
+                        {OPENNESS_DESCRIPTIONS[group]}
                       </span>
                     </td>
                   </tr>
                   {rows.map((model) => (
                     <tr
                       key={model.id}
-                      className="border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors"
+                      className={
+                        model.id === selectedModelId
+                          ? 'border-b border-gray-700/50 bg-blue-500/10 transition-colors'
+                          : 'border-b border-gray-700/50 hover:bg-gray-700/30 transition-colors'
+                      }
                     >
                       <td className="py-3 px-4">
                         <a
@@ -167,6 +175,14 @@ export function DownloadsPanel({ models }) {
                         >
                           {model.name}
                         </a>
+                        {model.id === selectedModelId && (
+                          <span
+                            className="ml-2 text-xs text-blue-400 border border-blue-700 rounded px-1.5 py-0.5"
+                            title="Selected in the header dropdown"
+                          >
+                            selected
+                          </span>
+                        )}
                         <span className="text-gray-500 text-xs ml-2">{model.id}</span>
                       </td>
                       <td className="py-3 px-4 text-right font-medium">

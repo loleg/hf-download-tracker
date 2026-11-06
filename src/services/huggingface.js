@@ -188,10 +188,11 @@ export async function fetchCommunityHealth(modelId) {
 }
 
 /**
- * Fetch the datasets published by the org, most downloaded first.
+ * Fetch the datasets published by an org (defaults to the configured org),
+ * most downloaded first.
  */
-export async function fetchOrgDatasets() {
-  const json = await requestJson(`${HF_API_BASE}/datasets?author=${HF_ORG}&limit=100`)
+export async function fetchOrgDatasets(org = HF_ORG) {
+  const json = await requestJson(`${HF_API_BASE}/datasets?author=${org}&limit=100`)
   if (!Array.isArray(json)) return null
 
   return json

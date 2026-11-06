@@ -15,7 +15,7 @@ const DERIVED_KINDS = [
   },
 ]
 
-export function EcosystemPanel({ model, datasets }) {
+export function EcosystemPanel({ model, datasets, modelName }) {
   const unavailable = !model?.childrenModelCount
   const derivedTotal = model
     ? Object.values(model.childrenModelCount ?? {}).reduce((sum, n) => sum + n, 0)
@@ -26,10 +26,12 @@ export function EcosystemPanel({ model, datasets }) {
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
-      <h2 className="text-lg font-semibold mb-1">Ecosystem</h2>
+      <h2 className="text-lg font-semibold mb-1">
+        Ecosystem{modelName ? ` — ${modelName}` : ''}
+      </h2>
       <p className="text-gray-400 text-sm mb-4">
-        What the community has built on top of Apertus — derived models, Spaces and datasets.
-        This is the part no download counter can fake.
+        What the community has built on top of {modelName ?? 'this model'} — derived models, Spaces and
+        datasets. This is the part no download counter can fake.
       </p>
 
       {unavailable && (
@@ -59,7 +61,7 @@ export function EcosystemPanel({ model, datasets }) {
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-300 mb-2">
               Derived works in total: {derivedTotal?.toLocaleString()} — every one is someone
-              building on Apertus.
+              building on {modelName ?? 'this model'}.
             </h3>
           </div>
         </>

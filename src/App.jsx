@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { MODELS, APERTUS_MODEL } from './config'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { MODELS } from './config'
 import { fetchModelInfo, fetchCommunityHealth, fetchOrgDatasets } from './services/huggingface'
 import { fetchOrgRepositories, fetchOrgPulse, GitHubRateLimitError } from './services/github'
 import { DownloadsPanel } from './components/DownloadsPanel'
@@ -15,8 +15,7 @@ const safe = async (loader, onRateLimited) => {
     return await loader()
   } catch (error) {
     if (error instanceof GitHubRateLimitError) {
-      onRateLimited?.()
-      return null
+      onRateLimited?.(error)
     }
     return null
   }
@@ -28,68 +27,88 @@ function App() {
   const [lastUpdated, setLastUpdated] = useState(null)
   const [githubNotice, setGithubNotice] = useState(null)
 
-  const [models, setModels] = useState(null)
-  const [ecosystemModel, setEcosystemModel] = useState(null)
+  // The model the model-specific panels (ecosystem, community health, stat
+  // cards) are calculated for. Switching recycles the cached per-model info
+  // and only refetches the model-specific live sources.
+  const [selectedModel, setSelectedModel] = useState(null)
+  const selectedModelRef = useRef(selectedModel)
+  const requestToken = useRef(0)
+
+  const [modelInfos, setModelInfos] = useState(null)
   const [datasets, setDatasets] = useState(null)
   const [health, setHealth] = useState(null)
   const [pulse, setPulse] = useState(null)
   const [repos, setRepos] = useState(null)
 
+  const selectedModelName = MODELS.find((m) => m.id === selectedModel)?.name
+
+  // Joined view (config + fetched info) for the peer-comparison table.
+  const models = useMemo(
+    () => MODELS.map((entry, i) => ({ ...entry, ...(modelInfos?.[i] ?? {}) })),
+    [modelInfos]
+  )
+  const selectedInfo = modelInfos?.find((info) => info?.id === selectedModel)
+
+  // Community health and the org's datasets are the only model-specific
+  // sources that need a refetch on model switch. The token guard ensures a
+  // stale response can never overwrite a newer one.
+  const fetchModelSpecific = useCallback(async (modelInfo) => {
+    const token = ++requestToken.current
+    if (!modelInfo) return;
+    const org = modelInfo.id.split('/')[0]
+    const [orgDatasets, modelHealth] = await Promise.all([
+      fetchOrgDatasets(modelInfo.org),
+      fetchCommunityHealth(modelInfo.id),
+    ])
+    if (token !== requestToken.current) return // a newer request owns the state now
+    setDatasets(orgDatasets)
+    setHealth(modelHealth)
+  }, [])
+
+  // Full refresh of every source (mount + refresh button).
   const loadAll = useCallback(async () => {
     setRefreshing(true)
     setGithubNotice(null)
 
-    const [
-      modelInfos,
-      overviewHealth,
-      orgDatasets,
-      orgPulse,
-      orgRepos,
-    ] = await Promise.all([
+    // fetchModelSpecific runs in parallel with the rest; it sets the
+    // model-specific `health` and `datasets` state internally, token-guarded.
+    const [infos, orgPulse, orgRepos] = await Promise.all([
       Promise.all(MODELS.map((entry) => fetchModelInfo(entry.id))),
-      safe(() => fetchCommunityHealth(APERTUS_MODEL), setGithubNotice),
-      safe(fetchOrgDatasets, setGithubNotice),
       safe(fetchOrgPulse, setGithubNotice),
       safe(fetchOrgRepositories, setGithubNotice),
+      fetchModelSpecific(selectedModelRef.current),
     ])
 
-    const joined = MODELS.map((entry, i) => ({
-      ...entry,
-      ...(modelInfos[i] ?? {}),
-    }))
-
-    setModels(joined)
-    setEcosystemModel(modelInfos.find((info) => info?.id === APERTUS_MODEL) ?? null)
-    setDatasets(orgDatasets)
-    setHealth(overviewHealth)
+    setModelInfos(infos)
     setPulse(orgPulse)
     setRepos(orgRepos)
     setLastUpdated(new Date())
     setRefreshing(false)
     setLoading(false)
-  }, [])
+  }, [fetchModelSpecific])
 
   useEffect(() => {
     loadAll()
   }, [loadAll])
 
-  const totalDownloads = (models ?? []).reduce(
-    (sum, m) => (m.downloads != null ? sum + m.downloads : sum),
-    0
+  // Light recalc on model switch: the ecosystem view and stat cards
+  // re-derive instantly from the cached per-model infos; only the two
+  // model-specific live sources are refetched.
+  const handleModelChange = useCallback(
+    async (id) => {
+      if (id === selectedModelRef.current || loading) return
+      setSelectedModel(id)
+      selectedModelRef.current = id
+      setRefreshing(true)
+      await fetchModelSpecific(id)
+      setLastUpdated(new Date())
+      setRefreshing(false)
+    },
+    [fetchModelSpecific, loading]
   )
-  const totalAllTime = (models ?? []).reduce(
-    (sum, m) => (m.downloadsAllTime != null ? sum + m.downloadsAllTime : sum),
-    0
-  )
-  const totalLikes = (models ?? []).reduce(
-    (sum, m) => (m.likes != null ? sum + m.likes : sum),
-    0
-  )
-  const apertusDerived = ecosystemModel
-    ? Object.values(ecosystemModel.childrenModelCount ?? {}).reduce(
-        (sum, n) => sum + n,
-        0
-      )
+
+  const selectedDerived = selectedInfo
+    ? Object.values(selectedInfo.childrenModelCount ?? {}).reduce((sum, n) => sum + n, 0)
     : null
 
   return (
@@ -106,6 +125,24 @@ function App() {
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
+              <label htmlFor="model-select" className="text-gray-400 text-sm">
+                Model:
+              </label>
+              <select
+                id="model-select"
+                value={selectedModel}
+                onChange={(event) => handleModelChange(event.target.value)}
+                disabled={loading}
+                className="bg-gray-700 border border-gray-600 rounded px-3 py-1.5 text-sm text-white focus:outline-none focus:border-blue-500"
+              >
+                {MODELS.map((entry) => (
+                  <option key={entry.id} value={entry.id}>
+                    {entry.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
               <span
                 className={`w-2 h-2 rounded-full ${
                   refreshing ? 'bg-yellow-500 animate-pulse' : 'bg-green-500'
@@ -114,7 +151,10 @@ function App() {
               <span className="text-gray-400 text-sm">
                 {refreshing ? 'Refreshing…' : 'Live data'}
                 {lastUpdated && (
-                  <span className="text-gray-500"> · updated {lastUpdated.toLocaleTimeString()}</span>
+                  <span className="text-gray-500">
+                    {' '}
+                    · updated {lastUpdated.toLocaleTimeString()}
+                  </span>
                 )}
               </span>
             </div>
@@ -132,19 +172,19 @@ function App() {
       <main className="max-w-7xl mx-auto px-6 py-6 space-y-6">
         {githubNotice && (
           <div className="bg-yellow-900/40 border border-yellow-700 text-yellow-200 rounded-lg p-4 text-sm">
-            {githubNotice.message ?? githubNotice}
+            {githubNotice.message ?? String(githubNotice)}
           </div>
         )}
 
-        {/* Stat cards */}
+        {/* Stat cards — reflect the selected model (plus the org-wide GitHub pulse) */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
           {[
-            { label: 'Downloads (30 days)', value: formatCompact(totalDownloads) },
-            { label: 'All-time downloads', value: formatCompact(totalAllTime) },
-            { label: 'Likes', value: formatCompact(totalLikes) },
+            { label: 'Downloads (30 days)', value: formatCompact(selectedInfo?.downloads) },
+            { label: 'All-time downloads', value: formatCompact(selectedInfo?.downloadsAllTime) },
+            { label: 'Likes', value: formatCompact(selectedInfo?.likes) },
             {
-              label: 'Derived works on Apertus',
-              value: apertusDerived == null ? '—' : apertusDerived.toLocaleString(),
+              label: 'Derived works',
+              value: selectedDerived == null ? '—' : selectedDerived.toLocaleString(),
             },
             {
               label: 'External PR share',
@@ -166,10 +206,14 @@ function App() {
         </div>
 
         {/* Panels */}
-        <DownloadsPanel models={models} />
-        <EcosystemPanel model={ecosystemModel} datasets={datasets} />
+        <DownloadsPanel models={models} selectedModelId={selectedModel} />
+        <EcosystemPanel
+          model={selectedInfo}
+          datasets={datasets}
+          modelName={selectedModelName}
+        />
         <ContributionsPanel pulse={pulse} repos={repos} />
-        <CommunityHealthPanel health={health} />
+        <CommunityHealthPanel health={health} modelName={selectedModelName} />
 
         {/* Honesty footer */}
         <footer className="text-center text-gray-500 text-xs py-4">

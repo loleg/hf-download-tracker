@@ -32,15 +32,15 @@ const STATS = [
   },
 ]
 
-export function CommunityHealthPanel({ health }) {
+export function CommunityHealthPanel({ health, modelName }) {
   const unavailable = !health
 
   return (
     <div className="bg-gray-800 rounded-lg p-4 border border-gray-700">
       <h2 className="text-lg font-semibold mb-1">Community health</h2>
       <p className="text-gray-400 text-sm mb-4">
-        How responsive and welcoming the Apertus community actually is — measured from public
-        discussion data on Hugging Face.
+        How responsive and welcoming the {modelName ?? 'model'} community actually is — measured
+        from public discussion data on Hugging Face.
       </p>
 
       {unavailable && (

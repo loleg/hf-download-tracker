@@ -20,6 +20,7 @@ export const TRACKED_REPOS = [
 // only). This distinction is the honest way to compare projects that release
 // different amounts of their stack.
 export const MODELS = [
+  { id: '', name: '', openness: '' },
   { id: 'swiss-ai/Apertus-v1.5-70B', name: 'Apertus 1.5 70B', openness: 'swiss-ai' },
   { id: 'swiss-ai/Apertus-v1.5-8B', name: 'Apertus 1.5 8B', openness: 'swiss-ai' },
   { id: 'swiss-ai/Apertus-v1.1-4B', name: 'Apertus 1.1 4B', openness: 'swiss-ai' },
@@ -32,9 +33,6 @@ export const MODELS = [
   { id: 'allenai/Olmo-3-7B-Instruct', name: 'Olmo 3 7B', openness: 'fully-open' },
   { id: 'aisingapore/Apertus-SEA-LION-v4-8B-IT-GGUF', name: 'Apertus-SEA-LION v4 8B', openness: 'fully-open' },
 ]
-
-// The model whose community (discussions, derived works) we track most closely.
-export const APERTUS_MODEL = MODELS[0]
 
 export const OPENNESS_LABELS = {
   'swiss-ai': 'Swiss AI Initiative',

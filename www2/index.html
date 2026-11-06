@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>Apertus Website Review — Report Summaries &amp; Conclusion</title>
+<meta name="description" content="Static review page summarizing three independent navigation and IA reports for apertus-ai.org, with a synthesis and prioritized rebuild plan.">
+<script src="https://cdn.jsdelivr.net/npm/marked@12/marked.min.js" defer></script>
+<style>
+:root {
+  --sky-blue: #7BBBD5;
+  --sky-blue-1: #AACFDC;
+  --sky-blue-2: #BFD8E1;
+  --anthracite: #2E2F31;
+  --red: #FF0000;
+  --red-dark: #C70000;
+  --panel: #EAF5F8;
+  --wash: #F3FAFC;
+  --border: rgba(46, 47, 49, 0.16);
+  --text-muted: rgba(46, 47, 49, 0.72);
+  --text-faint: rgba(46, 47, 49, 0.56);
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: var(--font-sans);
+  font-weight: 300;
+  font-size: 17px;
+  line-height: 1.6;
+  color: var(--anthracite);
+  background: #fff;
+  -webkit-font-smoothing: antialiased;
+}
+body:has(dialog[open]) { overflow: hidden; }
+a { color: var(--red); text-decoration: underline; text-underline-offset: 2px; }
+a:hover { color: var(--red-dark); }
+:focus-visible { outline: 2px solid var(--red); outline-offset: 2px; }
+.container { max-width: 1120px; margin: 0 auto; padding: 0 1.25rem; }
+.visually-hidden {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
+}
+.skip-link {
+  position: absolute; left: -9999px; top: 0; z-index: 100;
+  background: var(--anthracite); color: #fff; padding: .6rem 1rem; font-weight: 700;
+}
+.skip-link:focus { left: 0; }
+.eyebrow {
+  font-family: var(--font-mono); font-size: .75rem; font-weight: 700;
+  letter-spacing: .16em; text-transform: uppercase; color: var(--red); margin: 0 0 .35rem;
+}
+.site-header {
+  background: linear-gradient(180deg, var(--wash), #fff);
+  border-bottom: 1px solid var(--border);
+  padding: 3.5rem 0 2.75rem;
+}
+.site-header h1 {
+  font-size: clamp(2rem, 4.5vw, 3.1rem); font-weight: 900;
+  letter-spacing: -0.02em; line-height: 1.12; margin: .4rem 0 1rem; max-width: 22ch;
+}
+.lede { font-size: 1.15rem; color: var(--text-muted); max-width: 62ch; }
+.note { font-size: .85rem; color: var(--text-faint); max-width: 72ch; }
+code {
+  font-family: var(--font-mono); font-size: .85em;
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 3px; padding: .05em .35em;
+}
+h2 { font-weight: 900; letter-spacing: -0.015em; }
+.reports { padding: 3.5rem 0 2rem; }
+.reports h2, .conclusion h2 { font-size: clamp(1.6rem, 3vw, 2.2rem); margin: 0 0 1.5rem; }
+.card-grid {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.25rem;
+}
+.report-card {
+  background: #fff; border: 1px solid var(--border); border-radius: 6px;
+  padding: 1.5rem; display: flex; flex-direction: column; gap: .6rem;
+  transition: transform .18s ease-out, box-shadow .18s ease-out;
+}
+.report-card:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(46, 47, 49, .08); }
+.card-top { display: flex; justify-content: space-between; align-items: center; gap: .5rem; }
+.chip {
+  font-family: var(--font-mono); font-size: .72rem; font-weight: 700;
+  letter-spacing: .12em; text-transform: uppercase;
+  padding: .25rem .6rem; border-radius: 3px;
+  background: var(--panel); color: var(--anthracite);
+}
+.chip-glm { border-left: 4px solid var(--sky-blue); }
+.chip-gemini { border-left: 4px solid var(--red); }
+.chip-chatgpt { border-left: 4px solid var(--anthracite); }
+.chip-ghost {
+  font-family: var(--font-mono); font-size: .7rem; letter-spacing: .1em;
+  text-transform: uppercase; color: var(--text-faint);
+}
+.report-card h3 { margin: 0; font-size: 1.3rem; font-weight: 900; letter-spacing: -0.01em; }
+.card-meta { font-family: var(--font-mono); font-size: .78rem; color: var(--text-faint); margin: 0; }
+.report-card > p { margin: 0; font-size: .95rem; color: var(--text-muted); }
+.report-card .btn { margin-top: auto; }
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: .6rem 1.25rem; border-radius: 3px;
+  border: 1px solid transparent; font: inherit; font-weight: 700; font-size: .95rem;
+  cursor: pointer; text-decoration: none;
+  transition: background-color .18s ease-out, color .18s ease-out, border-color .18s ease-out;
+}
+.btn-primary { background: var(--red); color: #fff; }
+.btn-primary:hover { background: var(--red-dark); }
+.btn-secondary { background: #fff; color: var(--anthracite); border-color: var(--border); }
+.btn-secondary:hover { background: var(--wash); border-color: var(--sky-blue); }
+.conclusion {
+  background: var(--wash); border-top: 1px solid var(--border);
+  padding: 3.5rem 0 4rem;
+}
+.conclusion h3 { font-size: 1.2rem; font-weight: 700; margin: 2rem 0 .6rem; }
+.conclusion ul, .conclusion ol { padding-left: 1.3rem; }
+.conclusion li { margin: .35rem 0; }
+.priority-list li { margin: .8rem 0; }
+.priority-list li::marker { font-weight: 700; color: var(--red); }
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: .95rem; }
+th, td { text-align: left; vertical-align: top; padding: .7rem .8rem; border: 1px solid var(--border); }
+thead th {
+  background: var(--panel); font-weight: 700; font-size: .8rem;
+  text-transform: uppercase; letter-spacing: .08em; font-family: var(--font-mono);
+}
+tbody th[scope="row"] {
+  font-family: var(--font-mono); font-size: .8rem; text-transform: uppercase;
+  letter-spacing: .08em; white-space: nowrap;
+}
+.bottom-line {
+  margin-top: 2rem; padding: 1rem 1.25rem;
+  background: #fff; border-left: 4px solid var(--red);
+}
+.site-footer {
+  border-top: 1px solid var(--border); background: #fff;
+  padding: 2rem 0 2.5rem; font-size: .88rem; color: var(--text-muted);
+}
+.site-footer p { margin: .3rem 0; }
+.footer-faint { color: var(--text-faint); font-size: .8rem; }
+dialog {
+  border: 1px solid var(--border); border-radius: 6px; padding: 0;
+  width: min(860px, 92vw); max-height: 86vh;
+  box-shadow: 0 18px 50px rgba(46, 47, 49, .25);
+}
+dialog::backdrop { background: rgba(46, 47, 49, .55); }
+.dialog-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 1rem;
+  padding: .8rem 1.4rem; border-bottom: 1px solid var(--border); background: var(--panel);
+}
+.dialog-header h2 { margin: 0; font-size: 1.05rem; font-weight: 900; }
+.dialog-close {
+  min-width: 44px; min-height: 44px; border: 1px solid var(--border);
+  background: #fff; border-radius: 3px; font-size: 1.2rem; line-height: 1;
+  cursor: pointer; color: var(--anthracite);
+}
+.dialog-close:hover { background: var(--wash); }
+.dialog-body {
+  padding: 1.2rem 1.4rem 1.6rem; overflow-y: auto;
+  max-height: calc(86vh - 72px); font-size: .98rem;
+}
+.dialog-body h2, .dialog-body h3 {
+  font-size: 1.3rem; font-weight: 900; margin: 1.6rem 0 .5rem;
+  padding-top: .8rem; border-top: 1px solid var(--border);
+}
+.dialog-body > :first-child { margin-top: 0; border-top: 0; padding-top: 0; }
+.dialog-body h3 { font-size: 1.15rem; font-weight: 700; }
+.dialog-body p { margin: .5rem 0; }
+.dialog-body ul, .dialog-body ol { margin: .5rem 0 .9rem; padding-left: 1.3rem; }
+.dialog-body li { margin: .3rem 0; }
+.dialog-body strong { font-weight: 700; }
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .site-header { padding: 2.5rem 0 2rem; }
+  .dialog-body { padding: 1rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { transition: none !important; animation: none !important; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="container">
+    <p class="eyebrow">www-apertus · navigation &amp; IA review · 6 November 2026</p>
+    <h1>Three reviews of the Apertus website, one conclusion</h1>
+    <p class="lede">Three independent reports reviewed the information architecture of <strong>apertus-ai.org</strong>. This page summarizes each one — open a card to read its full summary in a dialog — and closes with a synthesis and a prioritized plan for the rebuild.</p>
+    <p class="note">Review page only: it lives in <code>tmp_analysis/</code>, which Hugo ignores, so nothing needs to change in the site build. Markdown in the dialogs is rendered with <a href="https://marked.js.org" rel="noopener">marked.js</a>; a minimal built-in renderer takes over automatically if the CDN is unreachable (e.g. offline).</p>
+  </div>
+</header>
+
+<main id="main" tabindex="-1">
+
+  <section class="reports" aria-labelledby="reports-heading">
+    <div class="container">
+      <h2 id="reports-heading">The three reports</h2>
+      <div class="card-grid">
+
+        <article class="report-card">
+          <div class="card-top">
+            <span class="chip chip-glm">GLM</span>
+            <span class="chip-ghost">Forensic audit</span>
+          </div>
+          <h3>Navigation &amp; IA Review</h3>
+          <p class="card-meta">Live site + www-apertus repo · 6 Nov 2026</p>
+          <p>Repo-grounded audit with a verified defect list: the nav’s “Documentation” item does not go to the docs, “Get Started” leads to a provider directory, the showcase page is literally titled “Get Started”, Contact links to a 404, and there is no skip link.</p>
+          <button type="button" class="btn btn-primary" data-report="glm" data-title="GLM — Navigation &amp; IA Review">Read summary</button>
+        </article>
+
+        <article class="report-card">
+          <div class="card-top">
+            <span class="chip chip-gemini">Gemini</span>
+            <span class="chip-ghost">IA blueprint</span>
+          </div>
+          <h3>Route by intent, not artifact</h3>
+          <p class="card-meta">Audience-first navigation proposal · 6 Nov 2026</p>
+          <p>Reframes the site around four personas — Curious, Builders, Academics, Contributors — and proposes a five-item intent-based structure with dropdowns, plus messaging guidance: progressive disclosure, the 1,000+ languages story, and a “fully open” checklist.</p>
+          <button type="button" class="btn btn-primary" data-report="gemini" data-title="Gemini — Route by intent, not artifact">Read summary</button>
+        </article>
+
+        <article class="report-card">
+          <div class="card-top">
+            <span class="chip chip-chatgpt">ChatGPT</span>
+            <span class="chip-ghost">Operational roadmap</span>
+          </div>
+          <h3>Apertus has outgrown its navigation</h3>
+          <p class="card-meta">13-page review · live site + linked resources · 6 Nov 2026</p>
+          <p>The most operationally detailed report: standardized app and provider listings, a contribution “contract” (task, prerequisites, submission, reviewer), research artifact mapping, a migration plan that preserves deep links, and honest measurement caveats.</p>
+          <button type="button" class="btn btn-primary" data-report="chatgpt" data-title="ChatGPT — Apertus has outgrown its navigation">Read summary</button>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <section class="conclusion" aria-labelledby="conclusion-heading">
+    <p class="container">
+      <p class="eyebrow">Synthesis</p>
+      <h2 id="conclusion-heading">Conclusion &amp; priorities for the rebuild</h2>
+      <p class="lede">Written independently on the same day, the three reports converge on one diagnosis and split usefully by altitude: <strong>the content is strong; the navigation routes by artifact instead of intent</strong> — so people cannot reach the docs, the showcase, or a way to contribute without reverse-engineering the site.</p>
+
+      <h3>Where all three agree</h3>
+      <ul>
+        <li>Navigation is organized around the site’s own artifacts, not visitor intent.</li>
+        <li>The documentation — the site’s best asset — is mislabeled (“Documentation” leads to downloads) and buried (breadcrumbs off, five-level sidebar).</li>
+        <li>The community showcase is missing from the main nav, and its page title is literally wrong.</li>
+        <li>There is no contribution route in the primary IA — the largest gap against the stated goals.</li>
+        <li>Fix the information architecture before commissioning any visual redesign.</li>
+      </ul>
+
+      <h3>What each report uniquely contributes</h3>
+      <div class="table-wrap">
+        <table>
+          <caption class="visually-hidden">Unique contribution of each report to the rebuild plan</caption>
+          <thead>
+            <tr><th scope="col">Report</th><th scope="col">Unique contribution</th><th scope="col">Navigation proposal</th></tr>
+          </thead>
+          <tbody>
+            <tr>
+              <th scope="row">GLM</th>
+              <td>A forensic, repo-grounded defect list — six one-line fixes with verified evidence (a live 404, front matter, template code).</td>
+              <td>Get Started · Docs · Research · Showcase · News · About, plus surfaced Search; Contact moves to the footer.</td>
+            </tr>
+            <tr>
+              <th scope="row">Gemini</th>
+              <td>The clearest audience-first blueprint and messaging guidance: progressive disclosure, the multilingual story, a “fully open” checklist.</td>
+              <td>Try Apertus · Build &amp; Deploy · Science &amp; Open Data · Community · Initiative.</td>
+            </tr>
+            <tr>
+              <th scope="row">ChatGPT</th>
+              <td>The operational layer: standardized listings, a contribution contract, research artifact mapping, a migration plan with content owners, measurement caveats.</td>
+              <td>Models · Build · Research · Contribute · About, with a prominent Try Apertus button and Docs as a utility link.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <h3>Recommended priorities</h3>
+      <ol class="priority-list">
+        <li><strong>P0 — this week: verified one-line repairs.</strong> Showcase title in <code>get-showcase.md</code>, the <code>/docs/FAQ</code> 404 in <code>contact.md</code>, a skip link in <code>baseof.html</code>, <code>breadcrumbs = true</code>, replace the theme placeholder description, make the SGLang example version-consistent, label the newsletter email field. Zero-risk fixes that currently erode trust.</li>
+        <li><strong>P1 — next 2–4 weeks: the intent-based navigation decision.</strong> Adopt one merged structure — <em>Try Apertus</em> (prominent) · <em>Docs</em> · <em>Models</em> · <em>Research</em> · <em>Showcase</em> · <em>Contribute</em> · <em>About</em> — with Contact in the footer and search surfaced in the header. “Get Started” becomes a decision page routing to <em>use via provider / run locally / build an app</em>. GLM’s minimal set and ChatGPT’s Models/Build/Docs discipline are compatible; pick one and keep labels canonical.</li>
+        <li><strong>P2 — next 1–2 months: content systems.</strong> Standardized app and provider listings (operator, requirements, version, privacy/source, last-checked), a Contribute landing page with a staffed receiving route, research regrouped by topic with artifacts (paper, code, data, citation), unify <code>/pages</code> and <code>/docs</code>, flatten the sidebar, homepage copy rewrite, and a maintainable localization assessment.</li>
+      </ol>
+
+      <h3>Guardrails</h3>
+      <ul>
+        <li>Preserve deep links with redirects; publish the migration map before moving anything.</li>
+        <li>Do not promote a contribution invitation before the receiving process exists and someone owns review.</li>
+        <li>Assign a content owner per section — a better menu exposes more content and raises the maintenance bar.</li>
+        <li>Validate with task-based tests (find an app, an endpoint, a model, an artifact, a contribution task) after P1, before expanding scope.</li>
+      </ul>
+
+      <h2>Apertus: Final Verdict</h2>
+       <ul class="bottom-line">
+         <strong>Navigation Fix Should Come First</strong>: Do not trigger a visual redesign or a color-scale pivot until the information architecture clearly serves <em>Try</em> vs <em>Build</em> vs <em>Contribute</em> personas.
+           <li><strong>Immediate (This Week):</strong> Rename or rearrange primary CTA buttons, fix the mixed-model documentation line, and add explicit language-disclosure on external providers.</li>
+           <li><strong>Next Sprint:</strong> Build “Try Apertus” and “Contribute” pages that are discoverable in the main nav, keeping existing deeper docs as auxiliary links. This is the primary bottleneck users cite.</li>
+           <li><strong>Longer Term:</strong> Once the pathways are obvious and accessible, layer improved styling and persona-specific messaging rather than guessing where users go today.</li>
+         <br>All three reports agree: <em>open methodology does not equal open pathfinding</em>. Use the existing palette (#7BBBD5, #FF0000, #2E2F31) but shape journeys around user goals.
+       </ul>
+
+    </div>
+  </section>
+
+</main>
+
+<footer class="site-footer">
+  <div class="container">
+    <p><strong>Sources:</strong> <code>tmp_analysis/analysis_glm.md</code> · <code>tmp_analysis/analysis_gemini.md</code> · <code>tmp_analysis/analysis_chatgpt.md</code></p>
+    <p class="footer-faint">Static review page generated 6 November 2026 · not part of the Hugo build · summaries are edited condensations; the source reports remain authoritative.</p>
+  </div>
+</footer>
+
+<dialog id="report-dialog" aria-labelledby="dialog-title">
+  <div class="dialog-header">
+    <h2 id="dialog-title">Report summary</h2>
+    <button type="button" id="dialog-close" class="dialog-close" aria-label="Close dialog">×</button>
+  </div>
+  <div class="dialog-body" id="dialog-body"></div>
+</dialog>
+
+<script type="text/markdown" id="md-glm">
+**Apertus Website — Navigation & IA Review** · 6 November 2026 · Scope: apertus-ai.org (live) + the `www-apertus` Hugo repo · Method: automated audit against four stated goals.
+
+## Verdict
+
+The content is genuinely strong — clean design system, a substantial `/docs/` tree, honest, credible copy. The navigation fails to deliver people to it. The single biggest problem: **the top-nav “Documentation” item does not go to the documentation** — it goes to a model-downloads page, while the real docs live at `/docs/` and are reachable only through in-text links.
+
+## Critical findings
+
+- **C1 — “Documentation” is a misnomer.** The nav item links to `/pages/documentation/` (download cards + repo links); the real docs are two clicks away via buried links.
+- **C2 — “Get Started” goes to the wrong place.** The hero’s primary CTA leads to an inference-provider directory; the quickstart is at `/docs/quickstart/`. The CTA serves partnership visibility, not the user’s task.
+- **C3 — Showcase page has the wrong title.** `content/pages/get-showcase.md` carries `title: "Get Started"` — a copy-paste error live in the page `<title>` and heading.
+- **C4 — News is invisible in global navigation.** The homepage is dominated by a news feed, yet no nav item exists.
+- **C5 — Contact page links to a 404.** It links `/docs/FAQ`; the real page is `/docs/faq/`. Verified live.
+- **C6 — No skip link.** A fixed navbar site-wide with no skip-to-content link — a WCAG 2.4.1 failure.
+
+## Serious findings
+
+- **Skeletal footer:** one link (“Legal Notice”) — wasted navigation real estate.
+- **Orphaned search:** `/search/` works but nothing links to it; surfacing it is the highest-leverage navigation improvement available.
+- **Split-brain IA:** `/pages/*` and `/docs/*` are two unlinked systems, and breadcrumbs are disabled in docs, so orientation is lost exactly where the site is deepest.
+- **Over-nested docs sidebar:** five levels of recursion mixing task- and topic-based groupings.
+- **Orphaned pages:** Charter and Hackathons are live but unnavigable.
+- **Hardcoded active states:** no top-nav item highlights while browsing `/docs/...`.
+
+## Minor findings
+
+A flat 24-card research wall; an orphaned draft (`pages/quickstart.md`) with unvetted LLM-style content; a live theme-placeholder meta description; awkward `safety @ this domain` email patterns; mixed Markdown/HTML link syntax in `about.md`.
+
+## Recommended structure
+
+- Top nav: `Get Started · Docs · Research · Showcase · News · About` plus surfaced Search; Contact moves to the footer.
+- Get Started becomes a decision page: use via a provider / run it locally / build an app.
+- Docs sidebar: enable breadcrumbs, flatten to at most three levels, order task-first (Quickstart → Use → Deploy → Develop → Reference → FAQ).
+
+## Quick wins — one-line fixes
+
+1. `get-showcase.md`: title → “Showcase”
+2. `contact.md`: `/docs/FAQ` → `/docs/faq/`
+3. `navbar.html`: add News + Showcase, retire Contact
+4. `hugo.toml`: `breadcrumbs = true`
+5. `baseof.html`: add a skip link as the first focusable element
+6. `docs/_index.md`: replace the theme placeholder description
+
+## Roadmap
+
+- **Now:** the six quick wins.
+- **2–4 weeks:** six-item nav, Get Started decision page, footer rebuild.
+- **1–2 months:** unify `/pages` + `/docs`, flatten the sidebar, regroup research by topic/year.
+- **Ongoing:** content governance — the orphaned draft shows a review step is needed before anything enters `content/`.
+</script>
+
+<script type="text/markdown" id="md-gemini">
+**Audience-first navigation restructure** — route users by *intent* rather than by *artifact*, turning a software-repository site into a welcoming ecosystem.
+
+## Verdict
+
+An 8B/70B open-weights model trained across 1,000+ languages is formidable engineering, but the website “is hiding its light under an academic bushel.” The front door should route by persona: the **Curious** (try it), **Builders** (use it), **Academics** (study it), **Contributors** (build it).
+
+## Critical gaps
+
+- **Cold-start problem:** “Get Started” is ambiguous — developers expect API keys and repos, enthusiasts expect a chat interface; users must guess what is behind the button.
+- **Hidden ecosystem:** Showcase is a secondary hero button and absent from the main navigation.
+- **Missing contribution pathways:** no Community or Contribute hub exists anywhere.
+- **Academic overhang:** “Sovereign AI” and “Alignment Principles” can exclude newcomers — practice progressive disclosure.
+
+## Proposed structure
+
+- Get Started → **Try Apertus** — enthusiasts, general public, product managers
+- Documentation → **Build & Deploy** — developers, engineers, enterprises
+- Research → **Science & Open Data** — researchers, policy makers, ethicists
+- *(missing)* → **Community** — open-source contributors, advocates
+- About / Contact → **Initiative** — press, partners, institutional stakeholders
+
+Dropdown contents per section:
+
+- **Try Apertus:** model playground, community showcase, inference providers
+- **Build & Deploy:** quick-start guide, documentation, download weights
+- **Science & Open Data:** publications and papers, training data & methods, alignment & ethics
+- **Community:** how to contribute, discussion forums, events & hackathons
+- **Initiative:** about, news & updates (a proper newsroom), partners & contact
+
+## Messaging recommendations
+
+- **Demystify the hero:** lead with utility — “The open foundation model for everyone. Built for performance, trained on 1,000+ languages, and completely transparent from data to deployment.”
+- **Progressive disclosure:** plain-English “why this matters” first, dense technical links second.
+- **Elevate the global story:** 1,000+ languages is a major inclusivity win; feature showcase apps in non-English languages.
+- **Define “fully open” visually:** a checklist contrasting Apertus with open-weights-only models — data, methods, and alignment are opened too. Lean into “Apertus is to AI as Open is to Source.”
+</script>
+
+<script type="text/markdown" id="md-chatgpt">
+**Apertus has outgrown its navigation** — a 13-page review (PDF/DOCX delivered separately), prepared from the live public site and selected linked resources, 6 November 2026.
+
+## Central criticism
+
+The structure asks newcomers to understand the Apertus ecosystem before it helps them enter it. Five intents must be distinguishable immediately: use something built with Apertus · choose or download a model · connect an API or run it locally · understand and inspect the research · help improve a project.
+
+## Recommended navigation
+
+**Models · Build · Research · Contribute · About**, with a prominent **Try Apertus** button; keep **Docs** available as a utility link. Discipline between the three technical entries:
+
+- **Models** — what a release is and whether it fits
+- **Build** — accomplish a technical task
+- **Docs** — maintained instructions and reference
+
+These cross-link, with one canonical description per release. Contact moves out of the primary nav (kept in About, the footer, and support contexts). Give desktop-app installers a route from Try Apertus so local use does not look like it requires programming.
+
+## Strongest interventions
+
+1. **Primary action delivers a first experience.** Try Apertus → apps and demos with clear operators and access requirements; separate explicit routes for API and local deployment. A well-maintained directory can serve this without building an official chatbot.
+2. **Listings that help choose, not just discover.** Each app states: what you can do, who operates it, app vs demo vs experiment, account/installation/payment requirements, Apertus version, privacy/source links, last-checked date. Explicit verbs (“Open chat”, “Download”); partnership stories demoted to secondary reading. Model openness, app license, and operator data practices are three separate questions.
+3. **Contribution with practical support.** A Contribute page must answer “What help is useful now?” — task, prerequisites, expected submission, receiving route, reviewer. Surface real projects (website/docs repo, data reconstruction scripts, conversation-format library). Do not launch a prominent invitation unless someone can respond.
+4. **Research people can understand and reuse.** Group by topic; connect each result to its question, plain-language finding, limitations, paper, code, data/reconstruction, evaluation artifacts, citation. Today a substantial publication collection sits under a news-style heading with inconsistent link behavior.
+5. **Capability and access info at decision points.** Training-language breadth is not conversational capability in a few dozen languages; explain download gating next to download actions; distinguish model capabilities from endpoint capabilities in provider listings (e.g. Swisscom’s Apertus 1.5 70B deployment lacks thinking mode). Mark unverified features as unverified.
+6. **Fix confidence-eroding defects.** Showcase `<title>` duplicates Get Started; inconsistent headings; unlabeled newsletter email field; an unnamed image link on Research; the SGLang guide’s start commands reference an older model while its test request targets 1.5 (a verified textual mismatch).
+
+## Inclusivity
+
+Make the invitation explicit and less dependent on technical confidence; keep Swiss provenance visible while welcoming participation from outside Switzerland and academia. Treat as three separate commitments: linguistic inclusion in development, useful performance in particular languages, and accessible interfaces in those languages. Localize a maintainable page set (EN/DE/FR/IT as a proposal; involve Romansh speakers in coverage decisions); make WCAG 2.2 items part of release requirements.
+
+## Priorities
+
+- **Immediate repairs:** accessible names and titles, the mixed-version example, external-link clarity, direct Try and Contribute routes.
+- **Next focused release:** proposed nav and landing pages, homepage rewrite, standardized records, model↔research connections, content owners, and a migration plan preserving deep links.
+- **Then validate and expand:** task-based tests (find an app, an endpoint, a suitable model, a research artifact, a contribution task) before localization, filters, or search. Measure carefully: an outbound app click shows intent, not successful use.
+</script>
+
+<script>
+(function () {
+  'use strict';
+
+  var dialog = document.getElementById('report-dialog');
+  var titleEl = document.getElementById('dialog-title');
+  var bodyEl = document.getElementById('dialog-body');
+  var closeBtn = document.getElementById('dialog-close');
+  var lastFocus = null;
+
+  function escapeHtml(s) {
+    return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  function inline(s) {
+    return s
+      .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+      .replace(/(^|[^*])\*([^*]+)\*/g, '$1<em>$2</em>')
+      .replace(/`([^`]+)`/g, '<code>$1</code>');
+  }
+
+  // Minimal renderer used only when the marked.js CDN is unreachable (offline use).
+  function fallbackRender(md) {
+    var lines = escapeHtml(md).split(/\r?\n/);
+    var out = [];
+    var ulOpen = false;
+    var olOpen = false;
+    function closeLists() {
+      if (ulOpen) { out.push('</ul>'); ulOpen = false; }
+      if (olOpen) { out.push('</ol>'); olOpen = false; }
+    }
+    for (var i = 0; i < lines.length; i++) {
+      var line = lines[i];
+      var h = line.match(/^(#{1,4})\s+(.*)$/);
+      var ul = line.match(/^\s*[-*]\s+(.*)$/);
+      var ol = line.match(/^\s*\d+\.\s+(.*)$/);
+      if (h) {
+        closeLists();
+        var lvl = h[1].length + 1;
+        out.push('<h' + lvl + '>' + inline(h[2]) + '</h' + lvl + '>');
+      } else if (ul) {
+        if (olOpen) { out.push('</ol>'); olOpen = false; }
+        if (!ulOpen) { out.push('<ul>'); ulOpen = true; }
+        out.push('<li>' + inline(ul[1]) + '</li>');
+      } else if (ol) {
+        if (ulOpen) { out.push('</ul>'); ulOpen = false; }
+        if (!olOpen) { out.push('<ol>'); olOpen = true; }
+        out.push('<li>' + inline(ol[1]) + '</li>');
+      } else if (line.trim() === '') {
+        closeLists();
+      } else {
+        closeLists();
+        out.push('<p>' + inline(line) + '</p>');
+      }
+    }
+    closeLists();
+    return out.join('\n');
+  }
+
+  function renderMarkdown(md) {
+    var html;
+    if (window.marked && typeof window.marked.parse === 'function') {
+      try {
+        window.marked.setOptions({ gfm: true, breaks: false });
+        html = window.marked.parse(md);
+      } catch (err) {
+        html = fallbackRender(md);
+      }
+    } else {
+      html = fallbackRender(md);
+    }
+    bodyEl.innerHTML = html;
+    bodyEl.scrollTop = 0;
+  }
+
+  function closeDialog() {
+    if (typeof dialog.close === 'function') {
+      dialog.close();
+    } else {
+      dialog.removeAttribute('open');
+      if (lastFocus && typeof lastFocus.focus === 'function') { lastFocus.focus(); }
+    }
+  }
+
+  Array.prototype.forEach.call(document.querySelectorAll('[data-report]'), function (btn) {
+    btn.addEventListener('click', function () {
+      var key = btn.getAttribute('data-report');
+      var src = document.getElementById('md-' + key);
+      lastFocus = btn;
+      titleEl.textContent = btn.getAttribute('data-title') || 'Report summary';
+      renderMarkdown(src ? src.textContent.trim() : '*Summary source not found.*');
+      if (typeof dialog.showModal === 'function') {
+        dialog.showModal();
+      } else {
+        dialog.setAttribute('open', '');
+      }
+    });
+  });
+
+  closeBtn.addEventListener('click', closeDialog);
+
+  dialog.addEventListener('click', function (e) {
+    if (e.target === dialog) { closeDialog(); }
+  });
+
+  dialog.addEventListener('close', function () {
+    bodyEl.innerHTML = '';
+    if (lastFocus && typeof lastFocus.focus === 'function') { lastFocus.focus(); }
+  });
+})();
+</script>
+</body>
+</html>
